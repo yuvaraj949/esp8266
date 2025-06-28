@@ -9,7 +9,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Allow CORS from frontend and ESP8266
+const allowedOrigins = [
+  'https://esp8266-eight.vercel.app', // Frontend
+  'http://localhost:5173',           // Local dev
+  'http://localhost:5000',           // Local backend
+  'https://esp8266-vzzf.vercel.app', // Backend (for ESP8266 direct calls)
+  '*',                               // ESP8266 (if needed, or use your local IP)
+];
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like ESP8266)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // MongoDB connection
@@ -62,6 +78,12 @@ app.get('/api/pump', (req, res) => {
   res.json({ triggered: pumpTriggered });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-});
+// Vercel compatibility: export app
+export default app;
+
+// Only listen if not in Vercel (local dev)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Backend server running on port ${PORT}`);
+  });
+}

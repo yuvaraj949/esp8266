@@ -9,7 +9,7 @@ export default function PumpSwitch() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('http://localhost:5000/api/pump', { method: 'POST' });
+      const res = await fetch('https://esp8266-vzzf.vercel.app/api/pump', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         setTriggered(true);

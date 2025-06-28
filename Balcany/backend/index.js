@@ -14,7 +14,7 @@ const allowedOrigins = [
   'https://esp8266-eight.vercel.app', // Frontend
   'http://localhost:5173',           // Local dev
   'http://localhost:5000',           // Local backend
-  'https://esp8266-vzzf.vercel.app', // Backend (for ESP8266 direct calls)
+  'https://esp8266-ujnv.vercel.app', // Backend (for ESP8266 direct calls)
   '*',                               // ESP8266 (if needed, or use your local IP)
 ];
 app.use(cors({
@@ -76,6 +76,16 @@ app.post('/api/pump', (req, res) => {
 
 app.get('/api/pump', (req, res) => {
   res.json({ triggered: pumpTriggered });
+});
+
+// Redirect trailing slashes (except for root)
+app.use((req, res, next) => {
+  if (req.path.substr(-1) === '/' && req.path.length > 1) {
+    const query = req.url.slice(req.path.length);
+    res.redirect(301, req.path.slice(0, -1) + query);
+  } else {
+    next();
+  }
 });
 
 // Vercel compatibility: export app

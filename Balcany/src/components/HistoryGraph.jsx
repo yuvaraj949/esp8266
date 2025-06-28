@@ -13,7 +13,7 @@ export default function HistoryGraph() {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://esp8266-vzzf.vercel.app/api/data/history');
+      const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
       const data = await res.json();
       setHistory(data);
     } catch (e) {

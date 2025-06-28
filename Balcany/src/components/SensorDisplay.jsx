@@ -13,7 +13,7 @@ export default function SensorDisplay() {
   const fetchLatest = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://esp8266-vzzf.vercel.app/api/data/latest');
+      const res = await fetch('https://esp8266-server.vercel.app/api/data/latest');
       const data = await res.json();
       setLatest(data);
     } catch (e) {

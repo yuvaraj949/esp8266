@@ -26,7 +26,12 @@ export default function SensorDisplay() {
     };
   }, []);
 
-  if (!latest) return <div className="sensor-card">No data available</div>;
+  if (!latest) return (
+    <div className="sensor-card" style={{ minWidth: 340, minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)', boxShadow: '0 2px 16px #0ff2' }}>
+      <h2 style={{ marginBottom: 20, color: '#ffb347' }}>🌡️ Temperature & 💧 Humidity</h2>
+      <div style={{ fontSize: 18, color: '#888' }}>No data available</div>
+    </div>
+  );
 
   // Gauge data for recharts
   // For temperature, fill the gauge from the minimum to the current value
@@ -39,12 +44,13 @@ export default function SensorDisplay() {
     { name: 'Humidity', value: latest.humidity, fill: '#00ffb3' },
     { name: 'Min', value: 100 - latest.humidity, fill: '#232526' }
   ];
-
   return (
-    <div className="sensor-card" style={{ minWidth: 340, alignItems: 'center', justifyContent: 'center' }}>
-      <h2 style={{ marginBottom: 20 }}>🌡️ Temperature & 💧 Humidity</h2>
+    <div className="sensor-card" style={{ minWidth: 340, alignItems: 'center', justifyContent: 'center', color: '#fff', background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)', boxShadow: '0 2px 16px #0ff2' }}>
+      <h2 style={{ marginBottom: 20, color: '#ffb347', letterSpacing: 1, textShadow: '0 2px 8px #ffb34744' }}>
+        🌡️ Temperature & 💧 Humidity
+      </h2>
       <div style={{ display: 'flex', flexDirection: 'row', gap: 30, justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#232526', borderRadius: 16, boxShadow: '0 2px 8px #ffb34744', padding: 10, minWidth: 160 }}>
           <RadialBarChart
             width={140}
             height={140}
@@ -70,11 +76,11 @@ export default function SensorDisplay() {
               dataKey="value"
               cornerRadius={10}
             />
-            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fill: '#ffb347', fontWeight: 'bold' }}>{latest.temperature}°C</text>
-            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#ffb347' }}>Temperature</text>
+            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 32, fill: '#ffb347', fontWeight: 'bold', textShadow: '0 2px 8px #ffb34744' }}>{latest.temperature}°C</text>
+            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#ffb347', fontWeight: 'bold', letterSpacing: 1 }}>Temperature</text>
           </RadialBarChart>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#232526', borderRadius: 16, boxShadow: '0 2px 8px #00ffb344', padding: 10, minWidth: 160 }}>
           <RadialBarChart
             width={140}
             height={140}
@@ -100,13 +106,13 @@ export default function SensorDisplay() {
               dataKey="value"
               cornerRadius={10}
             />
-            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fill: '#00ffb3', fontWeight: 'bold' }}>{latest.humidity}%</text>
-            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#00ffb3' }}>Humidity</text>
+            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 32, fill: '#00ffb3', fontWeight: 'bold', textShadow: '0 2px 8px #00ffb344' }}>{latest.humidity}%</text>
+            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#00ffb3', fontWeight: 'bold', letterSpacing: 1 }}>Humidity</text>
           </RadialBarChart>
         </div>
       </div>
-      <div style={{ fontSize: '0.9em', color: '#888', marginTop: 18 }}>
-        {latest.timestamp ? new Date(latest.timestamp).toLocaleString() : ''}
+      <div style={{ fontSize: '0.9em', color: '#888', marginTop: 18, textAlign: 'center' }}>
+        {latest.timestamp ? `Last updated: ${new Date(latest.timestamp).toLocaleString()}` : ''}
       </div>
     </div>
   );

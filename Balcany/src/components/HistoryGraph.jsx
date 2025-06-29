@@ -38,7 +38,7 @@ function HistoryGraph() {
     { label: '1yr', value: '1y', ms: 366 * 24 * 60 * 60 * 1000 },
   ];
 
-  // Filter data by selected time scale
+  // Filter and rescale data for the selected time window
   const now = Date.now();
   const selectedScale = timeScales.find(t => t.value === timeScale);
   // Format x-axis label based on scale
@@ -60,45 +60,78 @@ function HistoryGraph() {
     }
   }
 
-  // Filter and rescale data for the selected time window
+  // Filter data for the selected time window
   let filteredHistory = history.filter(d => {
     if (!selectedScale) return true;
     return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
   });
 
-  // If there are at least 2 points, rescale to fill the chart
-  if (filteredHistory.length > 1) {
-    const minTime = new Date(filteredHistory[0].timestamp).getTime();
-    const maxTime = new Date(filteredHistory[filteredHistory.length - 1].timestamp).getTime();
-    const timeRange = maxTime - minTime || 1;
-    filteredHistory = filteredHistory.map(d => ({
-      ...d,
-      time: minTime + ((new Date(d.timestamp).getTime() - minTime) / timeRange) * timeRange
-    }));
-  } else {
-    filteredHistory = filteredHistory.map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
-  }
+  // Only show the filtered data in the graph (fix: content changes with scale)
+  filteredHistory = filteredHistory.map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
 
-  if (loading && !history.length) return <div className="sensor-card">Loading history...</div>;
-  if (!history.length) return <div className="sensor-card">No history data</div>;
+  if (loading && !history.length) return (
+    <div className="sensor-card" style={{
+      background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)',
+      boxShadow: '0 2px 16px #0ff2',
+      color: '#fff',
+      minWidth: 350,
+      minHeight: 220,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 18
+    }}>
+      <span style={{ color: '#00eaff' }}>Loading history...</span>
+    </div>
+  );
+  if (!history.length) return (
+    <div className="sensor-card" style={{
+      background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)',
+      boxShadow: '0 2px 16px #0ff2',
+      color: '#fff',
+      minWidth: 350,
+      minHeight: 220,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 18
+    }}>
+      <span style={{ color: '#888' }}>No history data</span>
+    </div>
+  );
 
   return (
-    <div className="sensor-card" style={{ background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)', boxShadow: '0 2px 16px #0ff2', color: '#fff', minWidth: 350 }}>
-      <h2 style={{ color: '#00eaff', letterSpacing: 1, marginBottom: 8 }}>📈 Temperature & Humidity History</h2>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 8, justifyContent: 'center' }}>
+    <div className="sensor-card" style={{
+      background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)',
+      boxShadow: '0 2px 16px #0ff2',
+      color: '#fff',
+      minWidth: 350,
+      padding: 24,
+      borderRadius: 18
+    }}>
+      <h2 style={{
+        color: '#00eaff',
+        letterSpacing: 1,
+        marginBottom: 12,
+        textShadow: '0 2px 8px #00eaff44',
+        fontWeight: 700
+      }}>📈 Temperature & Humidity History</h2>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, justifyContent: 'center' }}>
         {timeScales.map(ts => (
           <button
             key={ts.value}
             onClick={() => setTimeScale(ts.value)}
             style={{
-              background: timeScale === ts.value ? '#00eaff' : '#232526',
+              background: timeScale === ts.value ? 'linear-gradient(90deg, #00eaff 60%, #6ee7b7 100%)' : '#232526',
               color: timeScale === ts.value ? '#232526' : '#fff',
-              border: 'none',
+              border: timeScale === ts.value ? '2px solid #00eaff' : 'none',
               borderRadius: 8,
-              padding: '4px 12px',
+              padding: '4px 14px',
               fontWeight: 'bold',
               cursor: 'pointer',
-              fontSize: 14
+              fontSize: 15,
+              boxShadow: timeScale === ts.value ? '0 2px 8px #00eaff44' : 'none',
+              transition: 'all 0.2s'
             }}
           >
             {ts.label}
@@ -116,20 +149,20 @@ function HistoryGraph() {
             angle={-30}
             textAnchor="end"
             height={50}
-            tick={{ fill: '#aaa', fontSize: 12 }}
+            tick={{ fill: '#aaa', fontSize: 13 }}
             tickFormatter={formatXAxisLabel}
           />
-          <YAxis yAxisId="left" label={{ value: '°C', angle: -90, position: 'insideLeft', fill: '#ffb347', fontSize: 13 }} tick={{ fill: '#ffb347', fontSize: 12 }} />
-          <YAxis yAxisId="right" orientation="right" label={{ value: '%', angle: 90, position: 'insideRight', fill: '#00ffb3', fontSize: 13 }} tick={{ fill: '#00ffb3', fontSize: 12 }} />
+          <YAxis yAxisId="left" label={{ value: '°C', angle: -90, position: 'insideLeft', fill: '#ffb347', fontSize: 14 }} tick={{ fill: '#ffb347', fontSize: 13 }} />
+          <YAxis yAxisId="right" orientation="right" label={{ value: '%', angle: 90, position: 'insideRight', fill: '#00ffb3', fontSize: 14 }} tick={{ fill: '#00ffb3', fontSize: 13 }} />
           <Tooltip contentStyle={{ background: '#232526', border: '1px solid #00eaff', color: '#fff' }} labelFormatter={formatXAxisLabel} />
           <Legend wrapperStyle={{ color: '#fff' }} />
-          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={1.2} dot={false} activeDot={{ r: 5 }} />
-          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={1.2} dot={false} activeDot={{ r: 5 }} />
+          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
         </LineChart>
       </ResponsiveContainer>
-      <div className="graph-labels" style={{ marginTop: 8 }}>
-        <span style={{ color: '#ffb347' }}>● Temp (°C)</span>
-        <span style={{ color: '#00ffb3' }}>● Humidity (%)</span>
+      <div className="graph-labels" style={{ marginTop: 10, display: 'flex', gap: 18, justifyContent: 'center', fontSize: 15 }}>
+        <span style={{ color: '#ffb347', fontWeight: 600 }}>● Temp (°C)</span>
+        <span style={{ color: '#00ffb3', fontWeight: 600 }}>● Humidity (%)</span>
       </div>
     </div>
   );

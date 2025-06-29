@@ -45,12 +45,21 @@ const SensorData = mongoose.model('SensorData', sensorSchema);
 // Receive data from ESP8266 (accept both /api/data and /api/data/)
 app.post(['/api/data', '/api/data/'], async (req, res) => {
   const { temperature, humidity } = req.body;
+  // Log every POST attempt
+  console.log(`[POST /api/data] Received:`, req.body);
   if (typeof temperature !== 'number' || typeof humidity !== 'number') {
+    console.warn(`[POST /api/data] Invalid data:`, req.body);
     return res.status(400).json({ error: 'Invalid data' });
   }
-  const data = new SensorData({ temperature, humidity });
-  await data.save();
-  res.json({ success: true });
+  try {
+    const data = new SensorData({ temperature, humidity });
+    await data.save();
+    console.log(`[POST /api/data] Saved:`, { temperature, humidity, timestamp: data.timestamp });
+    res.json({ success: true });
+  } catch (e) {
+    console.error(`[POST /api/data] DB save error:`, e);
+    res.status(500).json({ error: 'DB error' });
+  }
 });
 
 // Get latest value

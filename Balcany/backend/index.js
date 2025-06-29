@@ -74,7 +74,9 @@ const pumpLogSchema = new mongoose.Schema({
   status: Boolean,
   timestamp: { type: Date, default: Date.now },
   source: String, // e.g. 'user', 'api', 'device', etc.
-  ip: String
+  ip: String,
+  note: String, // 'valid' or 'invalid'
+  body: String // for invalid attempts
 });
 const PumpLog = mongoose.model('PumpLog', pumpLogSchema);
 
@@ -82,23 +84,42 @@ const PumpLog = mongoose.model('PumpLog', pumpLogSchema);
 
 app.post('/api/pump', async (req, res) => {
   const { on } = req.body;
+  let logStatus = null;
+  let logNote = '';
   if (typeof on === 'boolean') {
     pumpStatus = on;
+    logStatus = on;
+    logNote = 'valid';
     // Log the change to the database
     try {
       await PumpLog.create({
         status: on,
         source: req.headers['user-agent'] || 'unknown',
-        ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress || ''
+        ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '',
+        note: logNote
       });
     } catch (e) {
       // Logging failure should not block the main response
       console.error('Failed to log pump status change:', e);
     }
     return res.json({ success: true, status: pumpStatus });
+  } else {
+    // Log invalid/malformed attempts
+    logStatus = null;
+    logNote = 'invalid';
+    try {
+      await PumpLog.create({
+        status: null,
+        source: req.headers['user-agent'] || 'unknown',
+        ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '',
+        note: logNote,
+        body: JSON.stringify(req.body)
+      });
+    } catch (e) {
+      console.error('Failed to log invalid pump status attempt:', e);
+    }
+    res.status(400).json({ success: false, status: pumpStatus, error: 'Invalid body' });
   }
-  // If invalid, do not change state, just return current status
-  res.status(400).json({ success: false, status: pumpStatus, error: 'Invalid body' });
 });
 // Endpoint to get pump status change logs (latest 50)
 app.get('/api/pump/logs', async (req, res) => {

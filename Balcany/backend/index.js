@@ -70,7 +70,7 @@ let pumpTriggered = false;
 
 app.post('/api/pump', (req, res) => {
   pumpTriggered = true;
-  setTimeout(() => { pumpTriggered = false; }, 5000); // auto-reset after 5s
+  setTimeout(() => { pumpTriggered = false; }, 1800000); // auto-reset after 5s
   res.json({ success: true });
 });
 

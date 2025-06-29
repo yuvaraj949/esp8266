@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
+function HistoryGraph() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeScale, setTimeScale] = useState('1d');
@@ -96,3 +97,5 @@ import {
     </div>
   );
 }
+
+export default HistoryGraph;

@@ -12,7 +12,7 @@ function PumpSwitch() {
       try {
         const res = await fetch('https://esp8266-server.vercel.app/api/pump');
         const data = await res.json();
-        if (mounted) setTriggered(!!data.triggered);
+        if (mounted) setTriggered(!!data.status);
       } catch {}
     };
     fetchStatus();

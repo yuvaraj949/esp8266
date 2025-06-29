@@ -65,25 +65,22 @@ app.get('/api/data/history', async (req, res) => {
   res.json(history.reverse());
 });
 
-// Pump trigger state (in-memory for demo)
-
-let pumpTriggered = false;
+// Pump status state (in-memory for demo)
+let pumpStatus = false;
 
 // Set pump state (on/off)
 app.post('/api/pump', (req, res) => {
-  // Accept JSON body: { on: true/false }
   const { on } = req.body;
   if (typeof on === 'boolean') {
-    pumpTriggered = on;
-    return res.json({ success: true, triggered: pumpTriggered });
+    pumpStatus = on;
+    return res.json({ success: true, status: pumpStatus });
   }
-  // fallback: legacy trigger (if no body)
-  pumpTriggered = true;
-  res.json({ success: true, triggered: pumpTriggered });
+  // If invalid, do not change state, just return current status
+  res.status(400).json({ success: false, status: pumpStatus, error: 'Invalid body' });
 });
 
 app.get('/api/pump', (req, res) => {
-  res.json({ triggered: pumpTriggered });
+  res.json({ status: pumpStatus });
 });
 
 // Health check endpoint

@@ -60,14 +60,14 @@ function HistoryGraph() {
     }
   }
 
-  // Filter data for the selected time window
-  let filteredHistory = history.filter(d => {
-    if (!selectedScale) return true;
-    return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
-  });
-
-  // Only show the filtered data in the graph (fix: content changes with scale)
-  filteredHistory = filteredHistory.map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+  // Filter and sort data for the selected time window
+  let filteredHistory = history
+    .filter(d => {
+      if (!selectedScale) return true;
+      return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
+    })
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
 
   if (loading && !history.length) return (
     <div className="sensor-card" style={{

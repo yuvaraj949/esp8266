@@ -60,13 +60,24 @@ function HistoryGraph() {
     }
   }
 
-  const filteredHistory = history.filter(d => {
+  // Filter and rescale data for the selected time window
+  let filteredHistory = history.filter(d => {
     if (!selectedScale) return true;
     return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
-  }).map(d => ({
-    ...d,
-    time: d.timestamp,
-  }));
+  });
+
+  // If there are at least 2 points, rescale to fill the chart
+  if (filteredHistory.length > 1) {
+    const minTime = new Date(filteredHistory[0].timestamp).getTime();
+    const maxTime = new Date(filteredHistory[filteredHistory.length - 1].timestamp).getTime();
+    const timeRange = maxTime - minTime || 1;
+    filteredHistory = filteredHistory.map(d => ({
+      ...d,
+      time: minTime + ((new Date(d.timestamp).getTime() - minTime) / timeRange) * timeRange
+    }));
+  } else {
+    filteredHistory = filteredHistory.map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+  }
 
   if (loading && !history.length) return <div className="sensor-card">Loading history...</div>;
   if (!history.length) return <div className="sensor-card">No history data</div>;

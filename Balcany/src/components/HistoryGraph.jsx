@@ -77,13 +77,26 @@ function HistoryGraph() {
     filteredHistory = history
       .filter(d => {
         const t = new Date(d.timestamp).getTime();
-        // Only include if t >= cutoff and t <= now
-        return t >= cutoff && t <= now;
+        // Only include if t >= cutoff and t <= now, and both values exist and are numbers
+        return (
+          t >= cutoff &&
+          t <= now &&
+          typeof d.temperature === 'number' &&
+          typeof d.humidity === 'number' &&
+          !isNaN(d.temperature) &&
+          !isNaN(d.humidity)
+        );
       })
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
   } else {
     filteredHistory = history
+      .filter(d =>
+        typeof d.temperature === 'number' &&
+        typeof d.humidity === 'number' &&
+        !isNaN(d.temperature) &&
+        !isNaN(d.humidity)
+      )
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
   }

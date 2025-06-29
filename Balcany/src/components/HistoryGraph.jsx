@@ -77,14 +77,18 @@ function HistoryGraph() {
   }
 
   // Filter and sort data for the selected time window
-  let filteredHistory = history
-    .filter(d => {
-      if (!selectedScale) return true;
-      // Only include data points newer than (now - selectedScale.ms)
-      return new Date(d.timestamp).getTime() >= (now - selectedScale.ms);
-    })
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-    .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+  let filteredHistory = [];
+  if (selectedScale) {
+    // Only include data points newer than (now - selectedScale.ms)
+    filteredHistory = history
+      .filter(d => new Date(d.timestamp).getTime() >= (now - selectedScale.ms))
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+      .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+  } else {
+    filteredHistory = history
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+      .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+  }
 
   if (loading && !history.length) return (
     <div className="sensor-card" style={{

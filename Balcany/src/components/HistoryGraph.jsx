@@ -80,8 +80,13 @@ function HistoryGraph() {
   let filteredHistory = [];
   if (selectedScale) {
     // Only include data points newer than (now - selectedScale.ms)
+    const cutoff = now - selectedScale.ms;
     filteredHistory = history
-      .filter(d => new Date(d.timestamp).getTime() >= (now - selectedScale.ms))
+      .filter(d => {
+        const t = new Date(d.timestamp).getTime();
+        // Only include if t >= cutoff and t <= now
+        return t >= cutoff && t <= now;
+      })
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
   } else {

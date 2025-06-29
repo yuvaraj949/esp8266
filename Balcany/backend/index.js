@@ -79,15 +79,8 @@ app.get('/api/data/history', async (req, res) => {
       query.timestamp = { $gte: sinceDate };
     }
   }
-  let lim = 100;
-  if (limit) {
-    const parsed = parseInt(limit);
-    if (!isNaN(parsed) && parsed > 0 && parsed <= 5000) lim = parsed;
-  } else if (since) {
-    lim = 1000; // If filtering by time, allow more points
-  }
-  // Sort ascending to get oldest-to-newest in the window
-  const history = await SensorData.find(query).sort({ timestamp: 1 }).limit(lim);
+  // Remove limit: return all matching data
+  const history = await SensorData.find(query).sort({ timestamp: 1 });
   res.json(history);
 });
 

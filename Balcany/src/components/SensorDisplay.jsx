@@ -71,7 +71,6 @@ export default function SensorDisplay() {
             />
             <RadialBar
               minAngle={15}
-              background={{ fill: '#ffe5c2' }} // light orange for temp background
               clockWise
               dataKey="value"
               cornerRadius={10}

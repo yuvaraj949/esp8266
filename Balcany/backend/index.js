@@ -66,8 +66,33 @@ app.get('/api/data/history', async (req, res) => {
 });
 
 
-// Pump status state (in-memory for demo)
-let pumpStatus = false;
+
+// Pump status state is now persisted in MongoDB
+const pumpStatusSchema = new mongoose.Schema({
+  status: { type: Boolean, required: true },
+  updatedAt: { type: Date, default: Date.now }
+});
+// Only one document will exist in this collection
+const PumpStatus = mongoose.model('PumpStatus', pumpStatusSchema);
+
+// Helper to get current pump status (returns Boolean, defaults to false if not set)
+async function getPumpStatus() {
+  const doc = await PumpStatus.findOne();
+  return doc ? doc.status : false;
+}
+
+// Helper to set pump status (creates or updates singleton doc)
+async function setPumpStatus(on) {
+  let doc = await PumpStatus.findOne();
+  if (!doc) {
+    doc = new PumpStatus({ status: on });
+  } else {
+    doc.status = on;
+    doc.updatedAt = new Date();
+  }
+  await doc.save();
+  return doc.status;
+}
 
 // Pump status change log schema
 const pumpLogSchema = new mongoose.Schema({
@@ -87,7 +112,13 @@ app.post('/api/pump', async (req, res) => {
   let logStatus = null;
   let logNote = '';
   if (typeof on === 'boolean') {
-    pumpStatus = on;
+    // Persist status in DB
+    let newStatus;
+    try {
+      newStatus = await setPumpStatus(on);
+    } catch (e) {
+      return res.status(500).json({ success: false, error: 'Failed to update pump status' });
+    }
     logStatus = on;
     logNote = 'valid';
     // Log the change to the database
@@ -102,7 +133,7 @@ app.post('/api/pump', async (req, res) => {
       // Logging failure should not block the main response
       console.error('Failed to log pump status change:', e);
     }
-    return res.json({ success: true, status: pumpStatus });
+    return res.json({ success: true, status: newStatus });
   } else {
     // Log invalid/malformed attempts
     logStatus = null;
@@ -118,7 +149,12 @@ app.post('/api/pump', async (req, res) => {
     } catch (e) {
       console.error('Failed to log invalid pump status attempt:', e);
     }
-    res.status(400).json({ success: false, status: pumpStatus, error: 'Invalid body' });
+    // Always return the current status from DB
+    let currentStatus = false;
+    try {
+      currentStatus = await getPumpStatus();
+    } catch {}
+    res.status(400).json({ success: false, status: currentStatus, error: 'Invalid body' });
   }
 });
 // Endpoint to get pump status change logs (latest 50)
@@ -131,8 +167,12 @@ app.get('/api/pump/logs', async (req, res) => {
   }
 });
 
-app.get('/api/pump', (req, res) => {
-  res.json({ status: pumpStatus });
+app.get('/api/pump', async (req, res) => {
+  let status = false;
+  try {
+    status = await getPumpStatus();
+  } catch {}
+  res.json({ status });
 });
 
 // Health check endpoint

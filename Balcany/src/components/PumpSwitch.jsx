@@ -5,16 +5,19 @@ export default function PumpSwitch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Sync with backend pump status on mount
+  // Sync with backend pump status on mount and poll every 5s
   useEffect(() => {
+    let mounted = true;
     const fetchStatus = async () => {
       try {
         const res = await fetch('https://esp8266-server.vercel.app/api/pump');
         const data = await res.json();
-        setTriggered(!!data.triggered);
+        if (mounted) setTriggered(!!data.triggered);
       } catch {}
     };
     fetchStatus();
+    const interval = setInterval(fetchStatus, 1000);
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   const handleSwitch = async () => {

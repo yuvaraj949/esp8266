@@ -9,11 +9,20 @@ function HistoryGraph() {
   const [timeScale, setTimeScale] = useState('1d');
   const intervalRef = useRef();
 
+  // Fetch history with ?since= for efficient scaling
   useEffect(() => {
     let mounted = true;
     const fetchHistory = async () => {
+      let url = 'https://esp8266-server.vercel.app/api/data/history';
+      const selected = timeScales.find(t => t.value === timeScale);
+      if (selected) {
+        const since = Date.now() - selected.ms;
+        url += `?since=${since}&limit=1000`;
+      } else {
+        url += '?limit=1000';
+      }
       try {
-        const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
+        const res = await fetch(url);
         const data = await res.json();
         if (mounted) setHistory(data);
       } catch (e) {
@@ -27,22 +36,6 @@ function HistoryGraph() {
       mounted = false;
       clearInterval(intervalRef.current);
     };
-  }, []);
-
-  // Refetch history when timeScale changes for immediate update
-  useEffect(() => {
-    let mounted = true;
-    const fetchHistory = async () => {
-      try {
-        const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
-        const data = await res.json();
-        if (mounted) setHistory(data);
-      } catch (e) {
-        if (mounted) setHistory([]);
-      }
-    };
-    fetchHistory();
-    return () => { mounted = false; };
   }, [timeScale]);
 
   // Time scale options

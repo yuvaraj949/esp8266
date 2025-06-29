@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
@@ -62,6 +61,7 @@ export default function SensorDisplay() {
             data={tempData}
             startAngle={210}
             endAngle={-30}
+            style={{ background: 'none' }}
           >
             <PolarAngleAxis
               type="number"
@@ -71,7 +71,7 @@ export default function SensorDisplay() {
             />
             <RadialBar
               minAngle={15}
-              background
+              background={{ fill: '#ffe5c2' }} // light orange for temp background
               clockWise
               dataKey="value"
               cornerRadius={10}
@@ -92,6 +92,7 @@ export default function SensorDisplay() {
             data={humData}
             startAngle={210}
             endAngle={-30}
+            style={{ background: 'none' }}
           >
             <PolarAngleAxis
               type="number"
@@ -101,7 +102,7 @@ export default function SensorDisplay() {
             />
             <RadialBar
               minAngle={15}
-              background
+              background={{ fill: '#baffea' }} // light teal for humidity background
               clockWise
               dataKey="value"
               cornerRadius={10}

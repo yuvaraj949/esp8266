@@ -59,9 +59,25 @@ app.get('/api/data/latest', async (req, res) => {
   res.json(latest);
 });
 
-// Get historical data (last 100 entries)
+
+// Get historical data, supports ?since=timestamp (ms since epoch) and ?limit=number
 app.get('/api/data/history', async (req, res) => {
-  const history = await SensorData.find().sort({ timestamp: -1 }).limit(100);
+  let { since, limit } = req.query;
+  let query = {};
+  if (since) {
+    const sinceDate = new Date(Number(since));
+    if (!isNaN(sinceDate.getTime())) {
+      query.timestamp = { $gte: sinceDate };
+    }
+  }
+  let lim = 100;
+  if (limit) {
+    const parsed = parseInt(limit);
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 5000) lim = parsed;
+  } else if (since) {
+    lim = 1000; // If filtering by time, allow more points
+  }
+  const history = await SensorData.find(query).sort({ timestamp: -1 }).limit(lim);
   res.json(history.reverse());
 });
 

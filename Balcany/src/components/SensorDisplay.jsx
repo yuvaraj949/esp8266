@@ -29,8 +29,16 @@ export default function SensorDisplay() {
   if (!latest) return <div className="sensor-card">No data available</div>;
 
   // Gauge data for recharts
-  const tempData = [{ name: 'Temperature', value: latest.temperature, fill: '#ffb347' }];
-  const humData = [{ name: 'Humidity', value: latest.humidity, fill: '#00ffb3' }];
+  // For temperature, fill the gauge from the minimum to the current value
+  const tempData = [
+    { name: 'Temperature', value: latest.temperature - (-10), fill: '#ffb347' },
+    { name: 'Min', value: 60 - (latest.temperature - (-10)), fill: '#232526' }
+  ];
+  // For humidity, fill the gauge from 0 to the current value
+  const humData = [
+    { name: 'Humidity', value: latest.humidity, fill: '#00ffb3' },
+    { name: 'Min', value: 100 - latest.humidity, fill: '#232526' }
+  ];
 
   return (
     <div className="sensor-card" style={{ minWidth: 340, alignItems: 'center', justifyContent: 'center' }}>
@@ -51,7 +59,7 @@ export default function SensorDisplay() {
           >
             <PolarAngleAxis
               type="number"
-              domain={[-10, 60]}
+              domain={[0, 70]}
               angleAxisId={0}
               tick={false}
             />

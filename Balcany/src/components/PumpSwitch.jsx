@@ -6,17 +6,19 @@ export default function PumpSwitch() {
   const [error, setError] = useState(null);
 
   const handleSwitch = async () => {
-    setLoading(true);
     setError(null);
+    const prev = triggered;
+    setTriggered(!triggered); // Optimistic UI
+    setLoading(true);
     try {
       const res = await fetch('https://esp8266-server.vercel.app/api/pump', { method: 'POST' });
       const data = await res.json();
-      if (data.success) {
-        setTriggered(!triggered);
-      } else {
+      if (!data.success) {
+        setTriggered(prev); // revert if failed
         setError('Failed to trigger pump');
       }
     } catch (e) {
+      setTriggered(prev); // revert if failed
       setError('Failed to trigger pump');
     }
     setLoading(false);

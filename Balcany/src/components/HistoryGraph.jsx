@@ -1,42 +1,82 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-export default function HistoryGraph() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [timeScale, setTimeScale] = useState('1d');
+  const intervalRef = useRef();
 
   useEffect(() => {
+    let mounted = true;
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
+        const data = await res.json();
+        if (mounted) setHistory(data);
+      } catch (e) {
+        if (mounted) setHistory([]);
+      }
+      setLoading(false);
+    };
     fetchHistory();
-    const interval = setInterval(fetchHistory, 10000);
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(fetchHistory, 10000);
+    return () => {
+      mounted = false;
+      clearInterval(intervalRef.current);
+    };
   }, []);
 
-  const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
-      const data = await res.json();
-      setHistory(data.map(d => ({
-        ...d,
-        time: new Date(d.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-      })));
-    } catch (e) {
-      setHistory([]);
-    }
-    setLoading(false);
-  };
+  // Time scale options
+  const timeScales = [
+    { label: '1hr', value: '1h', ms: 60 * 60 * 1000 },
+    { label: '12hr', value: '12h', ms: 12 * 60 * 60 * 1000 },
+    { label: '1d', value: '1d', ms: 24 * 60 * 60 * 1000 },
+    { label: '1mo', value: '1mo', ms: 31 * 24 * 60 * 60 * 1000 },
+    { label: '1yr', value: '1y', ms: 366 * 24 * 60 * 60 * 1000 },
+  ];
 
-  if (loading) return <div className="sensor-card">Loading history...</div>;
+  // Filter data by selected time scale
+  const now = Date.now();
+  const selectedScale = timeScales.find(t => t.value === timeScale);
+  const filteredHistory = history.filter(d => {
+    if (!selectedScale) return true;
+    return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
+  }).map(d => ({
+    ...d,
+    time: new Date(d.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }));
+
+  if (loading && !history.length) return <div className="sensor-card">Loading history...</div>;
   if (!history.length) return <div className="sensor-card">No history data</div>;
 
   return (
     <div className="sensor-card" style={{ background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)', boxShadow: '0 2px 16px #0ff2', color: '#fff', minWidth: 350 }}>
       <h2 style={{ color: '#00eaff', letterSpacing: 1, marginBottom: 8 }}>📈 Temperature & Humidity History</h2>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 8, justifyContent: 'center' }}>
+        {timeScales.map(ts => (
+          <button
+            key={ts.value}
+            onClick={() => setTimeScale(ts.value)}
+            style={{
+              background: timeScale === ts.value ? '#00eaff' : '#232526',
+              color: timeScale === ts.value ? '#232526' : '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '4px 12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: 14
+            }}
+          >
+            {ts.label}
+          </button>
+        ))}
+      </div>
       <ResponsiveContainer width="100%" height={260} minWidth={320} minHeight={200}>
         <LineChart
-          data={history}
+          data={filteredHistory}
           margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#333" />

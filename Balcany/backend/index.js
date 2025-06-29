@@ -86,8 +86,9 @@ app.get('/api/data/history', async (req, res) => {
   } else if (since) {
     lim = 1000; // If filtering by time, allow more points
   }
-  const history = await SensorData.find(query).sort({ timestamp: -1 }).limit(lim);
-  res.json(history.reverse());
+  // Sort ascending to get oldest-to-newest in the window
+  const history = await SensorData.find(query).sort({ timestamp: 1 }).limit(lim);
+  res.json(history);
 });
 
 

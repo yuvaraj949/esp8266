@@ -80,7 +80,8 @@ function HistoryGraph() {
   let filteredHistory = history
     .filter(d => {
       if (!selectedScale) return true;
-      return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
+      // Only include data points newer than (now - selectedScale.ms)
+      return new Date(d.timestamp).getTime() >= (now - selectedScale.ms);
     })
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
     .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));

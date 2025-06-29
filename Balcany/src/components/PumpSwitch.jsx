@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function PumpSwitch() {
   const [triggered, setTriggered] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const lastUserAction = useRef(0);
 
-  // Sync with backend pump status on mount and poll every 5s
-  // Only sync with backend if not loading (not during user action)
+  // Always sync with backend pump status every second
   useEffect(() => {
     let mounted = true;
     const fetchStatus = async () => {

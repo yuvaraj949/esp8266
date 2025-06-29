@@ -58,27 +58,57 @@ export default function SensorDisplay() {
             innerRadius={50}
             outerRadius={65}
             barSize={18}
-            data={tempData}
             startAngle={210}
             endAngle={-30}
-            style={{ background: 'none' }}
           >
-            <PolarAngleAxis
-              type="number"
-              domain={[0, 70]}
-              angleAxisId={0}
-              tick={false}
-            />
+            {/* Background arc (full gauge) */}
             <RadialBar
-              minAngle={15}
-              background={{ fill: '#333333' }}
-              clockWise
               dataKey="value"
-              cornerRadius={10}
+              data={[{ value: 70 }]}  // the max value
+              fill="#333333"          // dark gray background
+              cornerRadius={0}
+              clockWise
             />
-            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 32, fill: '#ffb347', fontWeight: 'bold', textShadow: '0 2px 8px #ffb34744' }}>{latest.temperature}°C</text>
-            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#ffb347', fontWeight: 'bold', letterSpacing: 1 }}>Temperature</text>
+
+            {/* Foreground arc (actual value) */}
+            <RadialBar
+              dataKey="value"
+              data={tempData}        // your actual temperature data
+              fill="#ffb347"         // bright orange
+              cornerRadius={10}
+              clockWise
+            />
+
+            {/* Text: Temperature */}
+            <text
+              x={70}
+              y={80}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              style={{
+                fontSize: 32,
+                fill: '#ffb347',
+                fontWeight: 'bold',
+                textShadow: '0 2px 8px #ffb34744',
+              }}
+            >
+              {latest.temperature}°C
+            </text>
+            <text
+              x={70}
+              y={120}
+              textAnchor="middle"
+              style={{
+                fontSize: 16,
+                fill: '#ffb347',
+                fontWeight: 'bold',
+                letterSpacing: 1,
+              }}
+            >
+              Temperature
+            </text>
           </RadialBarChart>
+
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#232526', borderRadius: 16, boxShadow: '0 2px 8px #00ffb344', padding: 10, minWidth: 160 }}>
           <RadialBarChart

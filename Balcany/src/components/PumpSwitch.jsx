@@ -1,18 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function PumpSwitch() {
   const [triggered, setTriggered] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Sync with backend pump status on mount
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('https://esp8266-server.vercel.app/api/pump');
+        const data = await res.json();
+        setTriggered(!!data.triggered);
+      } catch {}
+    };
+    fetchStatus();
+  }, []);
 
   const handleSwitch = async () => {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch('https://esp8266-server.vercel.app/api/pump', { method: 'POST', body: JSON.stringify({ on: !triggered }), headers: { 'Content-Type': 'application/json' } });
+      const res = await fetch('https://esp8266-server.vercel.app/api/pump', {
+        method: 'POST',
+        body: JSON.stringify({ on: !triggered }),
+        headers: { 'Content-Type': 'application/json' }
+      });
       const data = await res.json();
       if (data.success) {
-        setTriggered(!triggered);
+        setTriggered(data.triggered);
       } else {
         setError('Failed to switch pump');
       }

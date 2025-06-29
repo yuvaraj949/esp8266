@@ -66,12 +66,20 @@ app.get('/api/data/history', async (req, res) => {
 });
 
 // Pump trigger state (in-memory for demo)
+
 let pumpTriggered = false;
 
+// Set pump state (on/off)
 app.post('/api/pump', (req, res) => {
+  // Accept JSON body: { on: true/false }
+  const { on } = req.body;
+  if (typeof on === 'boolean') {
+    pumpTriggered = on;
+    return res.json({ success: true, triggered: pumpTriggered });
+  }
+  // fallback: legacy trigger (if no body)
   pumpTriggered = true;
-  setTimeout(() => { pumpTriggered = false; }, 1800000); // auto-reset after 5s
-  res.json({ success: true });
+  res.json({ success: true, triggered: pumpTriggered });
 });
 
 app.get('/api/pump', (req, res) => {

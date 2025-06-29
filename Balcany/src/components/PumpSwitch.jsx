@@ -105,7 +105,7 @@ function PumpSwitch() {
           <div
             style={{
               position: 'absolute',
-              top: 4,
+              top: 3,
               left: triggered ? 34 : 5,
               width: 28,
               height: 28,

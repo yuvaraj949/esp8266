@@ -29,6 +29,22 @@ function HistoryGraph() {
     };
   }, []);
 
+  // Refetch history when timeScale changes for immediate update
+  useEffect(() => {
+    let mounted = true;
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
+        const data = await res.json();
+        if (mounted) setHistory(data);
+      } catch (e) {
+        if (mounted) setHistory([]);
+      }
+    };
+    fetchHistory();
+    return () => { mounted = false; };
+  }, [timeScale]);
+
   // Time scale options
   const timeScales = [
     { label: '1hr', value: '1h', ms: 60 * 60 * 1000 },

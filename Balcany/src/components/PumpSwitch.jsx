@@ -11,8 +11,6 @@ function PumpSwitch() {
   useEffect(() => {
     let mounted = true;
     const fetchStatus = async () => {
-      // Ignore backend sync for 2s after user action
-      if (Date.now() - lastUserAction.current < 2000) return;
       try {
         const res = await fetch('https://esp8266-server.vercel.app/api/pump');
         const data = await res.json();
@@ -27,18 +25,13 @@ function PumpSwitch() {
   const handleSwitch = async () => {
     setError(null);
     setLoading(true);
-    lastUserAction.current = Date.now();
     try {
-      // Send the toggle request
       await fetch('https://esp8266-server.vercel.app/api/pump', {
         method: 'POST',
         body: JSON.stringify({ on: !triggered }),
         headers: { 'Content-Type': 'application/json' }
       });
-      // Always fetch the backend state after toggling
-      const res2 = await fetch('https://esp8266-server.vercel.app/api/pump');
-      const data2 = await res2.json();
-      setTriggered(!!data2.triggered);
+      // The polling will update the UI to the backend state within 1s
     } catch (e) {
       setError('Failed to switch pump');
     }

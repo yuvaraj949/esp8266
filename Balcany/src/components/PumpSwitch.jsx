@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export default function PumpSwitch() {
+function PumpSwitch() {
   const [triggered, setTriggered] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const lastUserAction = useRef(0);
 
   // Sync with backend pump status on mount and poll every 5s
   // Only sync with backend if not loading (not during user action)
   useEffect(() => {
     let mounted = true;
     const fetchStatus = async () => {
-      if (loading) return; // Don't sync while user is toggling
+      // Ignore backend sync for 2s after user action
+      if (Date.now() - lastUserAction.current < 2000) return;
       try {
         const res = await fetch('https://esp8266-server.vercel.app/api/pump');
         const data = await res.json();
@@ -20,11 +22,12 @@ export default function PumpSwitch() {
     fetchStatus();
     const interval = setInterval(fetchStatus, 1000);
     return () => { mounted = false; clearInterval(interval); };
-  }, [loading]);
+  }, []);
 
   const handleSwitch = async () => {
     setError(null);
     setLoading(true);
+    lastUserAction.current = Date.now();
     try {
       const res = await fetch('https://esp8266-server.vercel.app/api/pump', {
         method: 'POST',
@@ -82,3 +85,5 @@ export default function PumpSwitch() {
     </div>
   );
 }
+
+export default PumpSwitch;

@@ -71,9 +71,8 @@ function HistoryGraph() {
 
   // Filter and sort data for the selected time window
   let filteredHistory = [];
+  let cutoff = selectedScale ? now - selectedScale.ms : null;
   if (selectedScale) {
-    // Only include data points newer than (now - selectedScale.ms)
-    const cutoff = now - selectedScale.ms;
     filteredHistory = history
       .filter(d => {
         const t = new Date(d.timestamp).getTime();
@@ -99,6 +98,27 @@ function HistoryGraph() {
       )
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+  }
+
+  // Ensure the X axis always covers the full selected time window
+  // Add null points at the start and end if needed, so the line doesn't extend
+  if (selectedScale && filteredHistory.length > 0) {
+    const first = filteredHistory[0];
+    const last = filteredHistory[filteredHistory.length - 1];
+    // Add a null point at the start if first point is after cutoff
+    if (first.time > cutoff) {
+      filteredHistory = [
+        { ...first, time: cutoff, temperature: null, humidity: null },
+        ...filteredHistory
+      ];
+    }
+    // Add a null point at the end if last point is before now
+    if (last.time < now) {
+      filteredHistory = [
+        ...filteredHistory,
+        { ...last, time: now, temperature: null, humidity: null }
+      ];
+    }
   }
 
   if (loading && !history.length) return (
@@ -183,13 +203,16 @@ function HistoryGraph() {
             height={50}
             tick={{ fill: '#aaa', fontSize: 13 }}
             tickFormatter={formatXAxisLabel}
+            type="number"
+            domain={selectedScale ? [cutoff, now] : ['auto', 'auto']}
+            scale="time"
           />
           <YAxis yAxisId="left" label={{ value: '°C', angle: -90, position: 'insideLeft', fill: '#ffb347', fontSize: 14 }} tick={{ fill: '#ffb347', fontSize: 13 }} />
           <YAxis yAxisId="right" orientation="right" label={{ value: '%', angle: 90, position: 'insideRight', fill: '#00ffb3', fontSize: 14 }} tick={{ fill: '#00ffb3', fontSize: 13 }} />
           <Tooltip contentStyle={{ background: '#232526', border: '1px solid #00eaff', color: '#fff' }} labelFormatter={formatXAxisLabel} />
           <Legend wrapperStyle={{ color: '#fff' }} />
-          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
-          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={2} dot={false} activeDot={{ r: 6 }} connectNulls={false} />
+          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={2} dot={false} activeDot={{ r: 6 }} connectNulls={false} />
         </LineChart>
       </ResponsiveContainer>
       <div className="graph-labels" style={{ marginTop: 10, display: 'flex', gap: 18, justifyContent: 'center', fontSize: 15 }}>

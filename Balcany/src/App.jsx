@@ -12,8 +12,10 @@ function App() {
       <h1>🌿 Smart Garden Dashboard</h1>
       <div className="dashboard">
         <SensorDisplay />
-        <HistoryGraph />
         <PumpSwitch />
+        <div style={{ width: '100%', maxWidth: 700, margin: '32px auto 0', display: 'flex', justifyContent: 'center' }}>
+          <HistoryGraph />
+        </div>
       </div>
       <footer style={{ marginTop: 40, color: '#888' }}>
         Made with <span style={{ color: '#27ae60' }}>♥</span> for your garden

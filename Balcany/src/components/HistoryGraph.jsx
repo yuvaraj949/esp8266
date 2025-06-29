@@ -190,7 +190,7 @@ function HistoryGraph() {
           </button>
         ))}
       </div>
-      <ResponsiveContainer width="100%" height={260} minWidth={320} minHeight={200}>
+      <ResponsiveContainer width="100%" height={380} minWidth={320} minHeight={320}>
         <LineChart
           data={filteredHistory}
           margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
@@ -209,7 +209,13 @@ function HistoryGraph() {
           />
           <YAxis yAxisId="left" label={{ value: '°C', angle: -90, position: 'insideLeft', fill: '#ffb347', fontSize: 14 }} tick={{ fill: '#ffb347', fontSize: 13 }} />
           <YAxis yAxisId="right" orientation="right" label={{ value: '%', angle: 90, position: 'insideRight', fill: '#00ffb3', fontSize: 14 }} tick={{ fill: '#00ffb3', fontSize: 13 }} />
-          <Tooltip contentStyle={{ background: '#232526', border: '1px solid #00eaff', color: '#fff' }} labelFormatter={formatXAxisLabel} />
+          <Tooltip 
+            contentStyle={{ background: 'rgba(35,37,38,0.85)', border: '1px solid #00eaff', color: '#fff', borderRadius: 10, fontSize: 14, minWidth: 0, maxWidth: 220, padding: 10 }}
+            wrapperStyle={{ zIndex: 10 }}
+            itemStyle={{ fontSize: 13, margin: 0, padding: 0 }}
+            labelStyle={{ fontWeight: 600, color: '#00eaff', fontSize: 14, marginBottom: 4 }}
+            labelFormatter={formatXAxisLabel}
+          />
           <Legend wrapperStyle={{ color: '#fff' }} />
           <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={2} dot={false} activeDot={{ r: 6 }} connectNulls={false} />
           <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={2} dot={false} activeDot={{ r: 6 }} connectNulls={false} />

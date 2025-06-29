@@ -70,6 +70,14 @@ export default function SensorDisplay() {
               tick={false}
             />
             <RadialBar
+              dataKey="value"
+              data={[{ value: 70 }]} // max value
+              background={false}
+              fill="#333333"
+              clockWise
+              cornerRadius={0}
+            />
+            <RadialBar
               minAngle={15}
               clockWise
               dataKey="value"

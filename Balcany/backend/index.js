@@ -29,7 +29,7 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/garden'x, {
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/garden', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });

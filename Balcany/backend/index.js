@@ -79,7 +79,12 @@ app.get('/api/pump', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/ping', (req, res) => res.json({ pong: true }));
+app.get('/api/ping', (req, res) => res.json({ ping: true }));
+
+// Test endpoint
+app.post('/api/test', (req, res) => {
+  res.json({ ok: true });
+});
 
 // Redirect trailing slashes (except for root and API POST endpoints)
 app.use((req, res, next) => {

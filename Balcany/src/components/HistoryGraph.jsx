@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 export default function HistoryGraph() {
   const [history, setHistory] = useState([]);
@@ -15,7 +18,10 @@ export default function HistoryGraph() {
     try {
       const res = await fetch('https://esp8266-server.vercel.app/api/data/history');
       const data = await res.json();
-      setHistory(data);
+      setHistory(data.map(d => ({
+        ...d,
+        time: new Date(d.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      })));
     } catch (e) {
       setHistory([]);
     }
@@ -25,70 +31,27 @@ export default function HistoryGraph() {
   if (loading) return <div className="sensor-card">Loading history...</div>;
   if (!history.length) return <div className="sensor-card">No history data</div>;
 
-  // Unique SVG area graph for temperature
-  const width = 320, height = 120, padding = 30;
-  const temps = history.map(d => d.temperature);
-  const hums = history.map(d => d.humidity);
-  const maxT = Math.max(...temps), minT = Math.min(...temps);
-  const maxH = Math.max(...hums), minH = Math.min(...hums);
-  const points = (arr, min, max) => arr.map((v, i) => [
-    padding + (i * (width - 2 * padding)) / (arr.length - 1),
-    height - padding - ((v - min) * (height - 2 * padding)) / (max - min || 1)
-  ]);
-  const tempPoints = points(temps, minT, maxT);
-  const humPoints = points(hums, minH, maxH);
-  const toPath = pts => pts.map((p, i) => i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`).join(' ');
-  const toArea = pts => toPath(pts) + ` L${pts[pts.length-1][0]},${height-padding} L${pts[0][0]},${height-padding} Z`;
-
   return (
-    <div className="sensor-card" style={{ background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)', boxShadow: '0 2px 16px #0ff2', color: '#fff' }}>
-      <h2 style={{ color: '#00eaff', letterSpacing: 1 }}>🌡️ Temperature</h2>
-      <div className="graph-container" style={{ background: '#10131a', border: '2px solid #00eaff', marginBottom: 24 }}>
-        <svg width={width} height={height} style={{ borderRadius: 12 }}>
-          <defs>
-            <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ffb347" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#232526" stopOpacity="0.1" />
-            </linearGradient>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-          <path d={toArea(tempPoints)} fill="url(#tempGradient)" filter="url(#glow)" />
-          <path d={toPath(tempPoints)} stroke="#ffb347" strokeWidth="3" fill="none" filter="url(#glow)" />
-        </svg>
-        <div className="graph-labels">
-          <span style={{ color: '#ffb347' }}>● Temp (°C)</span>
-          <span style={{ color: '#fff' }}>{minT} - {maxT}°C</span>
-        </div>
-      </div>
-      <h2 style={{ color: '#00ffb3', letterSpacing: 1 }}>💧 Humidity</h2>
-      <div className="graph-container" style={{ background: '#10131a', border: '2px solid #00ffb3' }}>
-        <svg width={width} height={height} style={{ borderRadius: 12 }}>
-          <defs>
-            <linearGradient id="humGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00ffb3" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#232526" stopOpacity="0.1" />
-            </linearGradient>
-            <filter id="glow2" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-          <path d={toArea(humPoints)} fill="url(#humGradient)" filter="url(#glow2)" />
-          <path d={toPath(humPoints)} stroke="#00ffb3" strokeWidth="3" fill="none" filter="url(#glow2)" />
-        </svg>
-        <div className="graph-labels">
-          <span style={{ color: '#00ffb3' }}>● Humidity (%)</span>
-          <span style={{ color: '#fff' }}>{minH} - {maxH}%</span>
-        </div>
+    <div className="sensor-card" style={{ background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)', boxShadow: '0 2px 16px #0ff2', color: '#fff', minWidth: 350 }}>
+      <h2 style={{ color: '#00eaff', letterSpacing: 1, marginBottom: 8 }}>📈 Temperature & Humidity History</h2>
+      <ResponsiveContainer width="100%" height={260} minWidth={320} minHeight={200}>
+        <LineChart
+          data={history}
+          margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+          <XAxis dataKey="time" angle={-30} textAnchor="end" height={50} tick={{ fill: '#aaa', fontSize: 12 }} />
+          <YAxis yAxisId="left" label={{ value: '°C', angle: -90, position: 'insideLeft', fill: '#ffb347', fontSize: 13 }} tick={{ fill: '#ffb347', fontSize: 12 }} />
+          <YAxis yAxisId="right" orientation="right" label={{ value: '%', angle: 90, position: 'insideRight', fill: '#00ffb3', fontSize: 13 }} tick={{ fill: '#00ffb3', fontSize: 12 }} />
+          <Tooltip contentStyle={{ background: '#232526', border: '1px solid #00eaff', color: '#fff' }} />
+          <Legend wrapperStyle={{ color: '#fff' }} />
+          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} />
+          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} />
+        </LineChart>
+      </ResponsiveContainer>
+      <div className="graph-labels" style={{ marginTop: 8 }}>
+        <span style={{ color: '#ffb347' }}>● Temp (°C)</span>
+        <span style={{ color: '#00ffb3' }}>● Humidity (%)</span>
       </div>
     </div>
   );

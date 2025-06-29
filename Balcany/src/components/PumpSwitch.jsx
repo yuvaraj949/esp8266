@@ -5,15 +5,14 @@ export default function PumpSwitch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSwitch = async (e) => {
+  const handleSwitch = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch('https://esp8266-server.vercel.app/api/pump', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        setTriggered(true);
-        setTimeout(() => setTriggered(false), 5000);
+        setTriggered(!triggered);
       } else {
         setError('Failed to trigger pump');
       }
@@ -25,20 +24,17 @@ export default function PumpSwitch() {
 
   return (
     <div className="sensor-card">
-      <h2>🕹️ Manual Pump Switch</h2>
+      <h2>� Pump Switch</h2>
       <label style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '1em 0' }}>
-        <span style={{ color: triggered ? '#27ae60' : '#888', fontWeight: 'bold' }}>
+        <span style={{ color: triggered ? '#27ae60' : '#888', fontWeight: 'bold', fontSize: 18 }}>
           {triggered ? 'Pump ON' : 'Pump OFF'}
         </span>
-        <input
-          type="checkbox"
-          checked={triggered}
-          onChange={handleSwitch}
-          disabled={loading || triggered}
-          style={{ width: 32, height: 32, accentColor: '#27ae60', cursor: loading || triggered ? 'not-allowed' : 'pointer' }}
-        />
+        <div style={{ position: 'relative', width: 64, height: 36, background: triggered ? '#27ae60' : '#555', borderRadius: 36, transition: 'background 0.2s', cursor: loading ? 'not-allowed' : 'pointer' }} onClick={loading ? undefined : handleSwitch}>
+          <div style={{ position: 'absolute', top: 4, left: triggered ? 32 : 4, width: 28, height: 28, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px #2224', transition: 'left 0.2s' }} />
+        </div>
       </label>
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
+      {loading && <div style={{ color: '#888', fontSize: 14 }}>Switching...</div>}
+      {error && <div style={{ color: 'red', fontSize: 14 }}>{error}</div>}
     </div>
   );
 }

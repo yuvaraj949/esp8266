@@ -1,43 +1,76 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef } from 'react';
+import CoolGauge from 'react-cool-gauge';
+
 
 export default function SensorDisplay() {
   const [latest, setLatest] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const intervalRef = useRef();
 
   useEffect(() => {
+    let mounted = true;
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch('https://esp8266-server.vercel.app/api/data/latest');
+        const data = await res.json();
+        if (mounted) setLatest(data);
+      } catch (e) {
+        if (mounted) setLatest(null);
+      }
+    };
     fetchLatest();
-    const interval = setInterval(fetchLatest, 5000);
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(fetchLatest, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(intervalRef.current);
+    };
   }, []);
 
-  const fetchLatest = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('https://esp8266-server.vercel.app/api/data/latest');
-      const data = await res.json();
-      setLatest(data);
-    } catch (e) {
-      setLatest(null);
-    }
-    setLoading(false);
-  };
-
-  if (loading) return <div className="sensor-card">Loading latest data...</div>;
   if (!latest) return <div className="sensor-card">No data available</div>;
 
   return (
-    <div className="sensor-card">
-      <h2>🌡️ Current Temperature & Humidity</h2>
-      <div className="sensor-values" style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#00eaff', margin: '1.2em 0' }}>
-        <div style={{ fontSize: '1.1em', color: '#ffb347', marginBottom: 10 }}>
-          <span role="img" aria-label="Temperature">🌡️</span> {latest.temperature}°C
+    <div className="sensor-card" style={{ minWidth: 340, alignItems: 'center', justifyContent: 'center' }}>
+      <h2 style={{ marginBottom: 20 }}>🌡️ Temperature & 💧 Humidity</h2>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: 30, justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <CoolGauge
+            value={latest.temperature}
+            min={-10}
+            max={60}
+            startAngle={210}
+            endAngle={-30}
+            color="#ffb347"
+            backgroundColor="#232526"
+            needleColor="#fff"
+            width={160}
+            height={120}
+            label="°C"
+            valueLabelStyle={{ fontSize: 28, fill: '#ffb347', fontWeight: 'bold' }}
+            labelStyle={{ fontSize: 16, fill: '#ffb347' }}
+          />
+          <span style={{ color: '#ffb347', marginTop: 8, fontWeight: 'bold' }}>Temperature</span>
         </div>
-        <div style={{ fontSize: '1.1em', color: '#00ffb3' }}>
-          <span role="img" aria-label="Humidity">💧</span> {latest.humidity}%
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <CoolGauge
+            value={latest.humidity}
+            min={0}
+            max={100}
+            startAngle={210}
+            endAngle={-30}
+            color="#00ffb3"
+            backgroundColor="#232526"
+            needleColor="#fff"
+            width={160}
+            height={120}
+            label="%"
+            valueLabelStyle={{ fontSize: 28, fill: '#00ffb3', fontWeight: 'bold' }}
+            labelStyle={{ fontSize: 16, fill: '#00ffb3' }}
+          />
+          <span style={{ color: '#00ffb3', marginTop: 8, fontWeight: 'bold' }}>Humidity</span>
         </div>
       </div>
-      <div style={{ fontSize: '0.9em', color: '#888' }}>
-        {new Date(latest.timestamp).toLocaleString()}
+      <div style={{ fontSize: '0.9em', color: '#888', marginTop: 18 }}>
+        {latest.timestamp ? new Date(latest.timestamp).toLocaleString() : ''}
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import SensorDisplay from './components/SensorDisplay';
 import HistoryGraph from './components/HistoryGraph';
-import PumpControl from './components/PumpControl';
 import PumpSwitch from './components/PumpSwitch';
 import './App.css'
 
@@ -14,7 +13,6 @@ function App() {
       <div className="dashboard">
         <SensorDisplay />
         <HistoryGraph />
-        <PumpControl />
         <PumpSwitch />
       </div>
       <footer style={{ marginTop: 40, color: '#888' }}>

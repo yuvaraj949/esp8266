@@ -41,12 +41,31 @@ function HistoryGraph() {
   // Filter data by selected time scale
   const now = Date.now();
   const selectedScale = timeScales.find(t => t.value === timeScale);
+  // Format x-axis label based on scale
+  function formatXAxisLabel(ts) {
+    const date = new Date(ts);
+    switch (timeScale) {
+      case '1h':
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      case '12h':
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      case '1d':
+        return date.toLocaleTimeString([], { hour: '2-digit' });
+      case '1mo':
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      case '1y':
+        return date.toLocaleDateString([], { month: 'short' });
+      default:
+        return date.toLocaleString();
+    }
+  }
+
   const filteredHistory = history.filter(d => {
     if (!selectedScale) return true;
     return now - new Date(d.timestamp).getTime() <= selectedScale.ms;
   }).map(d => ({
     ...d,
-    time: new Date(d.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    time: d.timestamp,
   }));
 
   if (loading && !history.length) return <div className="sensor-card">Loading history...</div>;
@@ -81,13 +100,20 @@ function HistoryGraph() {
           margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-          <XAxis dataKey="time" angle={-30} textAnchor="end" height={50} tick={{ fill: '#aaa', fontSize: 12 }} />
+          <XAxis
+            dataKey="time"
+            angle={-30}
+            textAnchor="end"
+            height={50}
+            tick={{ fill: '#aaa', fontSize: 12 }}
+            tickFormatter={formatXAxisLabel}
+          />
           <YAxis yAxisId="left" label={{ value: '°C', angle: -90, position: 'insideLeft', fill: '#ffb347', fontSize: 13 }} tick={{ fill: '#ffb347', fontSize: 12 }} />
           <YAxis yAxisId="right" orientation="right" label={{ value: '%', angle: 90, position: 'insideRight', fill: '#00ffb3', fontSize: 13 }} tick={{ fill: '#00ffb3', fontSize: 12 }} />
-          <Tooltip contentStyle={{ background: '#232526', border: '1px solid #00eaff', color: '#fff' }} />
+          <Tooltip contentStyle={{ background: '#232526', border: '1px solid #00eaff', color: '#fff' }} labelFormatter={formatXAxisLabel} />
           <Legend wrapperStyle={{ color: '#fff' }} />
-          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} />
-          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} />
+          <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={1.2} dot={false} activeDot={{ r: 5 }} />
+          <Line yAxisId="right" type="monotone" dataKey="humidity" name="Humidity (%)" stroke="#00ffb3" strokeWidth={1.2} dot={false} activeDot={{ r: 5 }} />
         </LineChart>
       </ResponsiveContainer>
       <div className="graph-labels" style={{ marginTop: 8 }}>

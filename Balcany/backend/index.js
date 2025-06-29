@@ -29,7 +29,7 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/garden', {
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/garden'x, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -42,8 +42,8 @@ const sensorSchema = new mongoose.Schema({
 
 const SensorData = mongoose.model('SensorData', sensorSchema);
 
-// Receive data from ESP8266
-app.post('/api/data', async (req, res) => {
+// Receive data from ESP8266 (accept both /api/data and /api/data/)
+app.post(['/api/data', '/api/data/'], async (req, res) => {
   const { temperature, humidity } = req.body;
   if (typeof temperature !== 'number' || typeof humidity !== 'number') {
     return res.status(400).json({ error: 'Invalid data' });
@@ -81,8 +81,15 @@ app.get('/api/pump', (req, res) => {
 // Health check endpoint
 app.get('/api/ping', (req, res) => res.json({ pong: true }));
 
-// Redirect trailing slashes (except for root)
+// Redirect trailing slashes (except for root and API POST endpoints)
 app.use((req, res, next) => {
+  // Do not redirect POST requests to /api/data or /api/pump
+  if (
+    req.method === 'POST' &&
+    (req.path === '/api/data/' || req.path === '/api/pump/')
+  ) {
+    return next();
+  }
   if (req.path.substr(-1) === '/' && req.path.length > 1) {
     const query = req.url.slice(req.path.length);
     res.redirect(301, req.path.slice(0, -1) + query);

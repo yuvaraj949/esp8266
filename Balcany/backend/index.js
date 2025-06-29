@@ -65,18 +65,49 @@ app.get('/api/data/history', async (req, res) => {
   res.json(history.reverse());
 });
 
+
 // Pump status state (in-memory for demo)
 let pumpStatus = false;
 
+// Pump status change log schema
+const pumpLogSchema = new mongoose.Schema({
+  status: Boolean,
+  timestamp: { type: Date, default: Date.now },
+  source: String, // e.g. 'user', 'api', 'device', etc.
+  ip: String
+});
+const PumpLog = mongoose.model('PumpLog', pumpLogSchema);
+
 // Set pump state (on/off)
-app.post('/api/pump', (req, res) => {
+
+app.post('/api/pump', async (req, res) => {
   const { on } = req.body;
   if (typeof on === 'boolean') {
     pumpStatus = on;
+    // Log the change to the database
+    try {
+      await PumpLog.create({
+        status: on,
+        source: req.headers['user-agent'] || 'unknown',
+        ip: req.headers['x-forwarded-for'] || req.connection?.remoteAddress || ''
+      });
+    } catch (e) {
+      // Logging failure should not block the main response
+      console.error('Failed to log pump status change:', e);
+    }
     return res.json({ success: true, status: pumpStatus });
   }
   // If invalid, do not change state, just return current status
   res.status(400).json({ success: false, status: pumpStatus, error: 'Invalid body' });
+});
+// Endpoint to get pump status change logs (latest 50)
+app.get('/api/pump/logs', async (req, res) => {
+  try {
+    const logs = await PumpLog.find().sort({ timestamp: -1 }).limit(50);
+    res.json(logs);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch logs' });
+  }
 });
 
 app.get('/api/pump', (req, res) => {

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import CoolGauge from 'react-cool-gauge';
+import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
 
 export default function SensorDisplay() {
@@ -28,45 +28,73 @@ export default function SensorDisplay() {
 
   if (!latest) return <div className="sensor-card">No data available</div>;
 
+  // Gauge data for recharts
+  const tempData = [{ name: 'Temperature', value: latest.temperature, fill: '#ffb347' }];
+  const humData = [{ name: 'Humidity', value: latest.humidity, fill: '#00ffb3' }];
+
   return (
     <div className="sensor-card" style={{ minWidth: 340, alignItems: 'center', justifyContent: 'center' }}>
       <h2 style={{ marginBottom: 20 }}>🌡️ Temperature & 💧 Humidity</h2>
       <div style={{ display: 'flex', flexDirection: 'row', gap: 30, justifyContent: 'center', alignItems: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <CoolGauge
-            value={latest.temperature}
-            min={-10}
-            max={60}
+          <RadialBarChart
+            width={140}
+            height={140}
+            cx={70}
+            cy={70}
+            innerRadius={50}
+            outerRadius={65}
+            barSize={18}
+            data={tempData}
             startAngle={210}
             endAngle={-30}
-            color="#ffb347"
-            backgroundColor="#232526"
-            needleColor="#fff"
-            width={160}
-            height={120}
-            label="°C"
-            valueLabelStyle={{ fontSize: 28, fill: '#ffb347', fontWeight: 'bold' }}
-            labelStyle={{ fontSize: 16, fill: '#ffb347' }}
-          />
-          <span style={{ color: '#ffb347', marginTop: 8, fontWeight: 'bold' }}>Temperature</span>
+          >
+            <PolarAngleAxis
+              type="number"
+              domain={[-10, 60]}
+              angleAxisId={0}
+              tick={false}
+            />
+            <RadialBar
+              minAngle={15}
+              background
+              clockWise
+              dataKey="value"
+              cornerRadius={10}
+            />
+            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fill: '#ffb347', fontWeight: 'bold' }}>{latest.temperature}°C</text>
+            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#ffb347' }}>Temperature</text>
+          </RadialBarChart>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <CoolGauge
-            value={latest.humidity}
-            min={0}
-            max={100}
+          <RadialBarChart
+            width={140}
+            height={140}
+            cx={70}
+            cy={70}
+            innerRadius={50}
+            outerRadius={65}
+            barSize={18}
+            data={humData}
             startAngle={210}
             endAngle={-30}
-            color="#00ffb3"
-            backgroundColor="#232526"
-            needleColor="#fff"
-            width={160}
-            height={120}
-            label="%"
-            valueLabelStyle={{ fontSize: 28, fill: '#00ffb3', fontWeight: 'bold' }}
-            labelStyle={{ fontSize: 16, fill: '#00ffb3' }}
-          />
-          <span style={{ color: '#00ffb3', marginTop: 8, fontWeight: 'bold' }}>Humidity</span>
+          >
+            <PolarAngleAxis
+              type="number"
+              domain={[0, 100]}
+              angleAxisId={0}
+              tick={false}
+            />
+            <RadialBar
+              minAngle={15}
+              background
+              clockWise
+              dataKey="value"
+              cornerRadius={10}
+            />
+            <text x={70} y={80} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 28, fill: '#00ffb3', fontWeight: 'bold' }}>{latest.humidity}%</text>
+            <text x={70} y={120} textAnchor="middle" style={{ fontSize: 16, fill: '#00ffb3' }}>Humidity</text>
+          </RadialBarChart>
         </div>
       </div>
       <div style={{ fontSize: '0.9em', color: '#888', marginTop: 18 }}>

@@ -25,7 +25,7 @@ if (TELEGRAM_BOT_TOKEN) {
     const chatId = msg.chat.id;
     try {
       // Fetch latest data from your API
-      const response = await fetch('http://localhost:5000/api/data/latest');
+      const response = await fetch('http://esp8266-server.vercel.app/api/data/latest');
       const data = await response.json();
       if (data && data.temperature !== undefined && data.humidity !== undefined) {
         const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Time: ${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}`;

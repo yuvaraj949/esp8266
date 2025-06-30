@@ -20,11 +20,11 @@ const TELEGRAM_USER_ID = process.env.TELEGRAM_USER_ID;
 let bot = null;
 if (TELEGRAM_BOT_TOKEN) {
   bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+
   // /data or /latest command handler
   bot.onText(/\/(data|latest)/, async (msg) => {
     const chatId = msg.chat.id;
     try {
-      // Fetch latest data from your API
       const response = await fetch('http://esp8266-server.vercel.app/api/data/latest');
       const data = await response.json();
       if (data && data.temperature !== undefined && data.humidity !== undefined) {
@@ -35,6 +35,50 @@ if (TELEGRAM_BOT_TOKEN) {
       }
     } catch (error) {
       bot.sendMessage(chatId, 'Error fetching data.');
+    }
+  });
+
+  // /pump command handler
+  bot.onText(/\/pump/, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+      const response = await fetch('http://esp8266-server.vercel.app/api/pump');
+      const data = await response.json();
+      if (typeof data.status === 'boolean') {
+        bot.sendMessage(chatId, `🚰 Pump is currently *${data.status ? 'ON' : 'OFF'}*`, { parse_mode: 'Markdown' });
+      } else {
+        bot.sendMessage(chatId, 'Could not fetch pump status.');
+      }
+    } catch (error) {
+      bot.sendMessage(chatId, 'Error fetching pump status.');
+    }
+  });
+
+  // /On_pump command handler
+  bot.onText(/\/On_pump/, async (msg) => {
+    try {
+      await fetch('http://esp8266-server.vercel.app/api/pump', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ on: true })
+      });
+      // No output needed
+    } catch (error) {
+      // No output needed
+    }
+  });
+
+  // /Off_pump command handler
+  bot.onText(/\/Off_pump/, async (msg) => {
+    try {
+      await fetch('http://esp8266-server.vercel.app/api/pump', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ on: false })
+      });
+      // No output needed
+    } catch (error) {
+      // No output needed
     }
   });
 }

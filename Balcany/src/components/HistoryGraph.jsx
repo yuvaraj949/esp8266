@@ -153,14 +153,7 @@ function HistoryGraph() {
   );
 
   return (
-    <div className="sensor-card" style={{
-      background: 'linear-gradient(135deg, #181a1b 60%, #232526 100%)',
-      boxShadow: '0 2px 16px #0ff2',
-      color: '#fff',
-      minWidth: 350,
-      padding: 24,
-      borderRadius: 18
-    }}>
+    <div className="graph-container">
       <h2 style={{
         color: '#00eaff',
         letterSpacing: 1,

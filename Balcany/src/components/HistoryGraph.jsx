@@ -69,14 +69,55 @@ function HistoryGraph() {
     }
   }
 
-  // Filter and sort data for the selected time window
+  // Filter, sort, and downsample data for the selected time window
   let filteredHistory = [];
   let cutoff = selectedScale ? now - selectedScale.ms : null;
+  // Downsampling intervals in ms for each scale
+  const downsampleIntervals = {
+    '1h': 60 * 1000,         // 1 min
+    '12h': 5 * 60 * 1000,   // 5 min
+    '1d': 10 * 60 * 1000,   // 10 min
+    '1mo': 60 * 60 * 1000,  // 1 hour
+    '1y': 24 * 60 * 60 * 1000 // 1 day
+  };
+  function downsample(data, intervalMs) {
+    if (!intervalMs || data.length < 2) return data;
+    let result = [];
+    let bucket = [];
+    let lastBucketTime = null;
+    for (let d of data) {
+      const t = new Date(d.timestamp).getTime();
+      if (lastBucketTime === null) lastBucketTime = t;
+      if (t - lastBucketTime > intervalMs) {
+        // Push average of bucket
+        if (bucket.length) {
+          const avg = {
+            time: Math.round(bucket.reduce((a, b) => a + b.time, 0) / bucket.length),
+            temperature: bucket.reduce((a, b) => a + b.temperature, 0) / bucket.length,
+            humidity: bucket.reduce((a, b) => a + b.humidity, 0) / bucket.length
+          };
+          result.push(avg);
+        }
+        bucket = [];
+        lastBucketTime = t;
+      }
+      bucket.push({ ...d, time: t });
+    }
+    // Push last bucket
+    if (bucket.length) {
+      const avg = {
+        time: Math.round(bucket.reduce((a, b) => a + b.time, 0) / bucket.length),
+        temperature: bucket.reduce((a, b) => a + b.temperature, 0) / bucket.length,
+        humidity: bucket.reduce((a, b) => a + b.humidity, 0) / bucket.length
+      };
+      result.push(avg);
+    }
+    return result;
+  }
   if (selectedScale) {
-    filteredHistory = history
+    let filtered = history
       .filter(d => {
         const t = new Date(d.timestamp).getTime();
-        // Only include if t >= cutoff and t <= now, and both values exist and are numbers
         return (
           t >= cutoff &&
           t <= now &&
@@ -86,8 +127,10 @@ function HistoryGraph() {
           !isNaN(d.humidity)
         );
       })
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-      .map(d => ({ ...d, time: new Date(d.timestamp).getTime() }));
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    // Downsample for large scales
+    const interval = downsampleIntervals[timeScale];
+    filteredHistory = downsample(filtered, interval);
   } else {
     filteredHistory = history
       .filter(d =>

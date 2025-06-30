@@ -29,7 +29,17 @@ if (TELEGRAM_BOT_TOKEN) {
       const response = await fetch('http://esp8266-server.vercel.app/api/data/latest');
       const data = await response.json();
       if (data && data.temperature !== undefined && data.humidity !== undefined) {
-        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Time: ${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}`;
+        let timeString = 'N/A';
+        if (data.timestamp) {
+          // Ensure timestamp is parsed as UTC and shown in local time
+          const dateObj = typeof data.timestamp === 'string' || typeof data.timestamp === 'number'
+            ? new Date(data.timestamp)
+            : null;
+          if (dateObj && !isNaN(dateObj.getTime())) {
+            timeString = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+          }
+        }
+        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Time: ${timeString}`;
         bot.sendMessage(chatId, message);
       } else {
         bot.sendMessage(chatId, 'No data available.');
@@ -50,7 +60,16 @@ if (TELEGRAM_BOT_TOKEN) {
       const pumpRes = await fetch('http://esp8266-server.vercel.app/api/pump');
       const pumpData = await pumpRes.json();
       if (sensorData && sensorData.temperature !== undefined && sensorData.humidity !== undefined && typeof pumpData.status === 'boolean') {
-        const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 Time: ${sensorData.timestamp ? new Date(sensorData.timestamp).toLocaleString() : 'N/A'}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;
+        let timeString = 'N/A';
+        if (sensorData.timestamp) {
+          const dateObj = typeof sensorData.timestamp === 'string' || typeof sensorData.timestamp === 'number'
+            ? new Date(sensorData.timestamp)
+            : null;
+          if (dateObj && !isNaN(dateObj.getTime())) {
+            timeString = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+          }
+        }
+        const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 Time: ${timeString}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;
         bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
       } else {
         bot.sendMessage(chatId, 'No data available.');

@@ -1,33 +1,67 @@
 
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import TelegramBot from 'node-telegram-bot-api';
 
 
 // Load environment variables
 dotenv.config();
 
+
 // Telegram notification setup
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_USER_ID = process.env.TELEGRAM_USER_ID;
 
+// Initialize Telegram Bot (polling)
+let bot = null;
+if (TELEGRAM_BOT_TOKEN) {
+  bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+  // /data or /latest command handler
+  bot.onText(/\/(data|latest)/, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+      // Fetch latest data from your API
+      const response = await fetch('http://localhost:5000/api/data/latest');
+      const data = await response.json();
+      if (data && data.temperature !== undefined && data.humidity !== undefined) {
+        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Time: ${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}`;
+        bot.sendMessage(chatId, message);
+      } else {
+        bot.sendMessage(chatId, 'No data available.');
+      }
+    } catch (error) {
+      bot.sendMessage(chatId, 'Error fetching data.');
+    }
+  });
+}
+
 async function sendTelegramMessage(message) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_USER_ID) return;
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  try {
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_USER_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      })
-    });
-  } catch (e) {
-    console.error('Failed to send Telegram message:', e);
+  if (bot && TELEGRAM_USER_ID) {
+    try {
+      await bot.sendMessage(TELEGRAM_USER_ID, message, { parse_mode: 'Markdown' });
+    } catch (e) {
+      console.error('Failed to send Telegram message:', e);
+    }
+  } else if (TELEGRAM_BOT_TOKEN && TELEGRAM_USER_ID) {
+    // fallback to HTTP API if bot not initialized
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    try {
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_USER_ID,
+          text: message,
+          parse_mode: 'Markdown'
+        })
+      });
+    } catch (e) {
+      console.error('Failed to send Telegram message:', e);
+    }
   }
 }
 
@@ -105,7 +139,7 @@ app.get('/api/data/history', async (req, res) => {
     }
   }
   // Remove limit: return all matching data
-  const history = await SensorData.find(query).sort({ timestamp: 1 });
+  const history = await SensorData.find(query).sort({ timestamp: -1 });
   res.json(history);
 });
 

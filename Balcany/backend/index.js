@@ -1,10 +1,35 @@
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+
 
 // Load environment variables
 dotenv.config();
+
+// Telegram notification setup
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_USER_ID = process.env.TELEGRAM_USER_ID;
+
+async function sendTelegramMessage(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_USER_ID) return;
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_USER_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+  } catch (e) {
+    console.error('Failed to send Telegram message:', e);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -126,6 +151,7 @@ const PumpLog = mongoose.model('PumpLog', pumpLogSchema);
 
 // Set pump state (on/off)
 
+
 app.post('/api/pump', async (req, res) => {
   const { on } = req.body;
   let logStatus = null;
@@ -152,6 +178,8 @@ app.post('/api/pump', async (req, res) => {
       // Logging failure should not block the main response
       console.error('Failed to log pump status change:', e);
     }
+    // Send Telegram notification
+    sendTelegramMessage(`🚰 Pump switched *${on ? 'ON' : 'OFF'}* at ${new Date().toLocaleString()}`);
     return res.json({ success: true, status: newStatus });
   } else {
     // Log invalid/malformed attempts
@@ -168,6 +196,8 @@ app.post('/api/pump', async (req, res) => {
     } catch (e) {
       console.error('Failed to log invalid pump status attempt:', e);
     }
+    // Send Telegram notification for bad request
+    sendTelegramMessage(`⚠️ *Bad pump request* at ${new Date().toLocaleString()}\nBody: \`${JSON.stringify(req.body)}\``);
     // Always return the current status from DB
     let currentStatus = false;
     try {

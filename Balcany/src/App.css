@@ -125,11 +125,25 @@ footer {
 /* Graph styles */
 .graph-container {
   width: 100%;
-  max-width: 340px;
+  max-width: 100%;
   background: #181a1b;
   border-radius: 12px;
   padding: 1em 0.5em;
   margin-bottom: 1em;
+  box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+  .graph-container {
+    max-width: 1200px;
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 899px) {
+  .graph-container {
+    max-width: 700px;
+  }
 }
 .graph-labels {
   display: flex;

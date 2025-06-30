@@ -21,8 +21,9 @@ let bot = null;
 if (TELEGRAM_BOT_TOKEN) {
   bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 
-  // /data or /latest command handler
-  bot.onText(/\/(data|latest)/, async (msg) => {
+
+  // /data command handler (sensor data only)
+  bot.onText(/^\/data$/, async (msg) => {
     const chatId = msg.chat.id;
     try {
       const response = await fetch('http://esp8266-server.vercel.app/api/data/latest');
@@ -38,8 +39,29 @@ if (TELEGRAM_BOT_TOKEN) {
     }
   });
 
-  // /pump command handler
-  bot.onText(/\/pump/, async (msg) => {
+  // /latest command handler (sensor data + pump status)
+  bot.onText(/^\/latest$/, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+      // Fetch sensor data
+      const sensorRes = await fetch('http://esp8266-server.vercel.app/api/data/latest');
+      const sensorData = await sensorRes.json();
+      // Fetch pump status
+      const pumpRes = await fetch('http://esp8266-server.vercel.app/api/pump');
+      const pumpData = await pumpRes.json();
+      if (sensorData && sensorData.temperature !== undefined && sensorData.humidity !== undefined && typeof pumpData.status === 'boolean') {
+        const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 Time: ${sensorData.timestamp ? new Date(sensorData.timestamp).toLocaleString() : 'N/A'}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;
+        bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+      } else {
+        bot.sendMessage(chatId, 'No data available.');
+      }
+    } catch (error) {
+      bot.sendMessage(chatId, 'Error fetching data.');
+    }
+  });
+
+  // /pump command handler (lowercase)
+  bot.onText(/^\/pump$/, async (msg) => {
     const chatId = msg.chat.id;
     try {
       const response = await fetch('http://esp8266-server.vercel.app/api/pump');
@@ -54,8 +76,8 @@ if (TELEGRAM_BOT_TOKEN) {
     }
   });
 
-  // /On_pump command handler
-  bot.onText(/\/On_pump/, async (msg) => {
+  // /on_pump command handler (lowercase)
+  bot.onText(/^\/on_pump$/, async (msg) => {
     try {
       await fetch('http://esp8266-server.vercel.app/api/pump', {
         method: 'POST',
@@ -68,8 +90,8 @@ if (TELEGRAM_BOT_TOKEN) {
     }
   });
 
-  // /Off_pump command handler
-  bot.onText(/\/Off_pump/, async (msg) => {
+  // /off_pump command handler (lowercase)
+  bot.onText(/^\/off_pump$/, async (msg) => {
     try {
       await fetch('http://esp8266-server.vercel.app/api/pump', {
         method: 'POST',

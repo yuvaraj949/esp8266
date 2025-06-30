@@ -43,7 +43,7 @@ if (TELEGRAM_BOT_TOKEN) {
             dubaiTime = dateObj.toLocaleString('en-AE', { timeZone: 'Asia/Dubai' });
           }
         }
-        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Kolkata: ${kolkataTime}\n🕒 Dubai: ${dubaiTime}`;
+        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 India: ${kolkataTime}\n🕒 Dubai: ${dubaiTime}`;
         bot.sendMessage(chatId, message);
       } else {
         bot.sendMessage(chatId, 'No data available.');

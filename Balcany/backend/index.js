@@ -39,7 +39,8 @@ if (TELEGRAM_BOT_TOKEN) {
             dateObj = new Date(data.timestamp);
           }
           if (dateObj && !isNaN(dateObj.getTime())) {
-            timeString = dateObj.toLocaleString(); // Use system/server local time
+            // Always show as Asia/Kolkata time
+            timeString = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
           }
         }
         const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Time: ${timeString}`;
@@ -72,7 +73,8 @@ if (TELEGRAM_BOT_TOKEN) {
             dateObj = new Date(sensorData.timestamp);
           }
           if (dateObj && !isNaN(dateObj.getTime())) {
-            timeString = dateObj.toLocaleString(); // Use system/server local time
+            // Always show as Asia/Kolkata time
+            timeString = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
           }
         }
         const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 Time: ${timeString}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;

@@ -13,7 +13,7 @@ function App() {
       <div className="dashboard">
         <SensorDisplay />
         <PumpSwitch />
-        <div style={{ width: '100%', maxWidth: 700, margin: '32px auto 0', display: 'flex', justifyContent: 'center' }}>
+        <div className="history-graph-wrapper">
           <HistoryGraph />
         </div>
       </div>

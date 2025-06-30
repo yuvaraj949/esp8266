@@ -1,3 +1,23 @@
+/* Responsive full-width graph wrapper for larger screens */
+.history-graph-wrapper {
+  width: 100%;
+  margin: 32px auto 0;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 900px) {
+  .history-graph-wrapper {
+    max-width: 1200px;
+    /* Let it fill the dashboard width, but not overflow */
+  }
+}
+
+@media (max-width: 899px) {
+  .history-graph-wrapper {
+    max-width: 700px;
+  }
+}
 #root {
   max-width: 900px;
   margin: 0 auto;

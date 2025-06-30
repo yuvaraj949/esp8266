@@ -29,7 +29,7 @@ if (TELEGRAM_BOT_TOKEN) {
       const response = await fetch('http://esp8266-server.vercel.app/api/data/latest');
       const data = await response.json();
       if (data && data.temperature !== undefined && data.humidity !== undefined) {
-        let kolkataTime = 'N/A';
+        let IndiaTime = 'N/A';
         let dubaiTime = 'N/A';
         if (data.timestamp) {
           let dateObj = null;
@@ -39,11 +39,11 @@ if (TELEGRAM_BOT_TOKEN) {
             dateObj = new Date(data.timestamp);
           }
           if (dateObj && !isNaN(dateObj.getTime())) {
-            kolkataTime = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            IndiaTime = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/India' });
             dubaiTime = dateObj.toLocaleString('en-AE', { timeZone: 'Asia/Dubai' });
           }
         }
-        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Kolkata: ${kolkataTime}\n🕒 Dubai: ${dubaiTime}`;
+        const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 India: ${IndiaTime}\n🕒 Dubai: ${dubaiTime}`;
         bot.sendMessage(chatId, message);
       } else {
         bot.sendMessage(chatId, 'No data available.');
@@ -64,7 +64,7 @@ if (TELEGRAM_BOT_TOKEN) {
       const pumpRes = await fetch('http://esp8266-server.vercel.app/api/pump');
       const pumpData = await pumpRes.json();
       if (sensorData && sensorData.temperature !== undefined && sensorData.humidity !== undefined && typeof pumpData.status === 'boolean') {
-        let kolkataTime = 'N/A';
+        let IndiaTime = 'N/A';
         let dubaiTime = 'N/A';
         if (sensorData.timestamp) {
           let dateObj = null;
@@ -74,11 +74,11 @@ if (TELEGRAM_BOT_TOKEN) {
             dateObj = new Date(sensorData.timestamp);
           }
           if (dateObj && !isNaN(dateObj.getTime())) {
-            kolkataTime = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            IndiaTime = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/India' });
             dubaiTime = dateObj.toLocaleString('en-AE', { timeZone: 'Asia/Dubai' });
           }
         }
-        const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 Kolkata: ${kolkataTime}\n🕒 Dubai: ${dubaiTime}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;
+        const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 India: ${IndiaTime}\n🕒 Dubai: ${dubaiTime}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;
         bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
       } else {
         bot.sendMessage(chatId, 'No data available.');
@@ -306,11 +306,11 @@ app.post('/api/pump', async (req, res) => {
       // Logging failure should not block the main response
       console.error('Failed to log pump status change:', e);
     }
-    // Send Telegram notification with both Kolkata and Dubai time
+    // Send Telegram notification with both India and Dubai time
     const now = new Date();
-    const kolkataTime = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const IndiaTime = now.toLocaleString('en-IN', { timeZone: 'Asia/India' });
     const dubaiTime = now.toLocaleString('en-AE', { timeZone: 'Asia/Dubai' });
-    sendTelegramMessage(`🚰 Pump switched *${on ? 'ON' : 'OFF'}*\n🕒 Kolkata: ${kolkataTime}\n🕒 Dubai: ${dubaiTime}`);
+    sendTelegramMessage(`🚰 Pump switched *${on ? 'ON' : 'OFF'}*\n🕒 India: ${IndiaTime}\n🕒 Dubai: ${dubaiTime}`);
     return res.json({ success: true, status: newStatus });
   } else {
     // Log invalid/malformed attempts

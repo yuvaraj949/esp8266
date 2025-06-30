@@ -6,20 +6,20 @@
   justify-content: center;
 }
 
+/* Remove fixed max-width for responsiveness */
 @media (min-width: 900px) {
   .history-graph-wrapper {
-    max-width: 1200px;
-    /* Let it fill the dashboard width, but not overflow */
+    max-width: none;
   }
 }
 
 @media (max-width: 899px) {
   .history-graph-wrapper {
-    max-width: 700px;
+    max-width: none;
   }
 }
 #root {
-  max-width: 900px;
+  width: 100%;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
@@ -135,14 +135,14 @@ footer {
 
 @media (min-width: 900px) {
   .graph-container {
-    max-width: 1200px;
-    min-width: 600px;
+    max-width: none;
+    min-width: 0;
   }
 }
 
 @media (max-width: 899px) {
   .graph-container {
-    max-width: 700px;
+    max-width: none;
   }
 }
 .graph-labels {

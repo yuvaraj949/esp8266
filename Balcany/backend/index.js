@@ -31,12 +31,15 @@ if (TELEGRAM_BOT_TOKEN) {
       if (data && data.temperature !== undefined && data.humidity !== undefined) {
         let timeString = 'N/A';
         if (data.timestamp) {
-          // Ensure timestamp is parsed as UTC and shown in local time
-          const dateObj = typeof data.timestamp === 'string' || typeof data.timestamp === 'number'
-            ? new Date(data.timestamp)
-            : null;
+          // Parse as UTC and convert to local time (system time zone)
+          let dateObj = null;
+          if (typeof data.timestamp === 'string' && /Z$/.test(data.timestamp)) {
+            dateObj = new Date(data.timestamp);
+          } else if (typeof data.timestamp === 'string' || typeof data.timestamp === 'number') {
+            dateObj = new Date(data.timestamp);
+          }
           if (dateObj && !isNaN(dateObj.getTime())) {
-            timeString = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            timeString = dateObj.toLocaleString(); // Use system/server local time
           }
         }
         const message = `🌡️ Temperature: ${data.temperature}°C\n💧 Humidity: ${data.humidity}%\n🕒 Time: ${timeString}`;
@@ -62,11 +65,14 @@ if (TELEGRAM_BOT_TOKEN) {
       if (sensorData && sensorData.temperature !== undefined && sensorData.humidity !== undefined && typeof pumpData.status === 'boolean') {
         let timeString = 'N/A';
         if (sensorData.timestamp) {
-          const dateObj = typeof sensorData.timestamp === 'string' || typeof sensorData.timestamp === 'number'
-            ? new Date(sensorData.timestamp)
-            : null;
+          let dateObj = null;
+          if (typeof sensorData.timestamp === 'string' && /Z$/.test(sensorData.timestamp)) {
+            dateObj = new Date(sensorData.timestamp);
+          } else if (typeof sensorData.timestamp === 'string' || typeof sensorData.timestamp === 'number') {
+            dateObj = new Date(sensorData.timestamp);
+          }
           if (dateObj && !isNaN(dateObj.getTime())) {
-            timeString = dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            timeString = dateObj.toLocaleString(); // Use system/server local time
           }
         }
         const message = `🌡️ Temperature: ${sensorData.temperature}°C\n💧 Humidity: ${sensorData.humidity}%\n🕒 Time: ${timeString}\n\n🚰 Pump is currently *${pumpData.status ? 'ON' : 'OFF'}*`;

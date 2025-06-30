@@ -306,8 +306,11 @@ app.post('/api/pump', async (req, res) => {
       // Logging failure should not block the main response
       console.error('Failed to log pump status change:', e);
     }
-    // Send Telegram notification
-    sendTelegramMessage(`🚰 Pump switched *${on ? 'ON' : 'OFF'}* at ${new Date().toLocaleString()}`);
+    // Send Telegram notification with both Kolkata and Dubai time
+    const now = new Date();
+    const kolkataTime = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const dubaiTime = now.toLocaleString('en-AE', { timeZone: 'Asia/Dubai' });
+    sendTelegramMessage(`🚰 Pump switched *${on ? 'ON' : 'OFF'}*\n🕒 Kolkata: ${kolkataTime}\n🕒 Dubai: ${dubaiTime}`);
     return res.json({ success: true, status: newStatus });
   } else {
     // Log invalid/malformed attempts

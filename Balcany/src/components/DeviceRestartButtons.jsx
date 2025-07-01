@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE = '/api'; // Adjust if needed
+const API_BASE = 'https://esp8266-server.vercel.app/api';
 
 export default function DeviceRestartButtons() {
   const [trigger, setTrigger] = useState({ nodeMCU: false, raspberryPi: false });

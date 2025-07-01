@@ -277,6 +277,68 @@ const pumpLogSchema = new mongoose.Schema({
 });
 const PumpLog = mongoose.model('PumpLog', pumpLogSchema);
 
+// Device Restart Trigger Schema
+const deviceRestartSchema = new mongoose.Schema({
+  nodeMCU: { type: Boolean, default: false },
+  raspberryPi: { type: Boolean, default: false },
+  updatedAt: { type: Date, default: Date.now }
+});
+// Only one document will exist in this collection
+const DeviceRestart = mongoose.model('DeviceRestart', deviceRestartSchema);
+
+// Helper to get or create the singleton trigger doc
+async function getOrCreateDeviceRestart() {
+  let doc = await DeviceRestart.findOne();
+  if (!doc) {
+    doc = new DeviceRestart();
+    await doc.save();
+  }
+  return doc;
+}
+// API: Get current restart trigger state
+app.get('/api/restart-trigger', async (req, res) => {
+  try {
+    const doc = await getOrCreateDeviceRestart();
+    res.json({ nodeMCU: doc.nodeMCU, raspberryPi: doc.raspberryPi });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch trigger' });
+  }
+});
+
+// API: Set restart trigger for a device (expects { device: 'nodeMCU'|'raspberryPi' })
+app.post('/api/restart-trigger', async (req, res) => {
+  const { device } = req.body;
+  if (!['nodeMCU', 'raspberryPi'].includes(device)) {
+    return res.status(400).json({ error: 'Invalid device' });
+  }
+  try {
+    const doc = await getOrCreateDeviceRestart();
+    doc[device] = true;
+    doc.updatedAt = new Date();
+    await doc.save();
+    res.json({ success: true, nodeMCU: doc.nodeMCU, raspberryPi: doc.raspberryPi });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to set trigger' });
+  }
+});
+
+// API: Reset trigger for a device (expects { device: 'nodeMCU'|'raspberryPi' })
+app.post('/api/restart-trigger/reset', async (req, res) => {
+  const { device } = req.body;
+  if (!['nodeMCU', 'raspberryPi'].includes(device)) {
+    return res.status(400).json({ error: 'Invalid device' });
+  }
+  try {
+    const doc = await getOrCreateDeviceRestart();
+    doc[device] = false;
+    doc.updatedAt = new Date();
+    await doc.save();
+    res.json({ success: true, nodeMCU: doc.nodeMCU, raspberryPi: doc.raspberryPi });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to reset trigger' });
+  }
+});
+
 // Set pump state (on/off)
 
 

@@ -113,7 +113,7 @@ export default function SensorDisplay() {
         </div>
       </div>
       <div style={{ fontSize: '0.9em', color: '#888', marginTop: 18, textAlign: 'center' }}>
-        {latest.timestamp ? `Last updated: ${new Date(latest.timestamp).toLocaleString()}` : ''}
+        {latest.timestamp ? `Last updated: ${new Date(latest.timestamp).toLocaleString([], { hour: '2-digit', minute: '2-digit', hour12: true })}` : ''}
       </div>
     </div>
   );

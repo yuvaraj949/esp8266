@@ -141,7 +141,7 @@ function PumpSwitch() {
       </div>
       {lastUpdated && (
         <div style={{ color: '#888', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
-          Last updated: {lastUpdated.toLocaleTimeString()}
+          Last updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
         </div>
       )}
       <style>{`

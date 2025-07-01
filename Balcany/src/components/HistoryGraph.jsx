@@ -55,11 +55,11 @@ function HistoryGraph() {
     const date = new Date(ts);
     switch (timeScale) {
       case '1h':
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
       case '12h':
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
       case '1d':
-        return date.toLocaleTimeString([], { hour: '2-digit' });
+        return date.toLocaleTimeString([], { hour: '2-digit', hour12: true });
       case '1mo':
         return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
       case '1y':

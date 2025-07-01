@@ -14,6 +14,7 @@ export default function DeviceStatus() {
       try {
         const res = await fetch('/api/device-status');
         const data = await res.json();
+        console.log('Device status:', data); // Add this line
         setStatus(data);
       } catch {
         setStatus({ raspberryPi: { online: false }, nodeMCU: { online: false } });

@@ -1,9 +1,9 @@
-
 import { useState } from 'react'
 import SensorDisplay from './components/SensorDisplay';
 import HistoryGraph from './components/HistoryGraph';
 import PumpSwitch from './components/PumpSwitch';
 import DeviceRestartButtons from './components/DeviceRestartButtons';
+import DeviceStatus from './components/DeviceStatus';
 import './App.css'
 
 function App() {
@@ -22,6 +22,7 @@ function App() {
       <div style={{ margin: '32px 0' }}>
         <DeviceRestartButtons />
       </div>
+      <DeviceStatus />
       <footer style={{ marginTop: 40, color: '#888' }}>
         Made with <span style={{ color: '#27ae60' }}>♥</span> for your garden
       </footer>

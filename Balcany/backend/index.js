@@ -278,6 +278,14 @@ const pumpLogSchema = new mongoose.Schema({
 const PumpLog = mongoose.model('PumpLog', pumpLogSchema);
 
 // Device Restart Trigger Schema
+
+// Device Status Schema (for online/ping tracking)
+const deviceStatusSchema = new mongoose.Schema({
+  device: { type: String, enum: ['raspberryPi', 'nodeMCU'], unique: true },
+  online: { type: Boolean, default: false },
+  lastSeen: { type: Date, default: Date.now }
+});
+const DeviceStatus = mongoose.model('DeviceStatus', deviceStatusSchema);
 const deviceRestartSchema = new mongoose.Schema({
   nodeMCU: { type: Boolean, default: false },
   raspberryPi: { type: Boolean, default: false },
@@ -287,6 +295,49 @@ const deviceRestartSchema = new mongoose.Schema({
 const DeviceRestart = mongoose.model('DeviceRestart', deviceRestartSchema);
 
 // Helper to get or create the singleton trigger doc
+
+// API: Device status ping (called by devices to update their online status)
+app.post('/api/device-status/ping', async (req, res) => {
+  const { device } = req.body;
+  if (!['raspberryPi', 'nodeMCU'].includes(device)) {
+    return res.status(400).json({ error: 'Invalid device' });
+  }
+  try {
+    let doc = await DeviceStatus.findOne({ device });
+    if (!doc) {
+      doc = new DeviceStatus({ device });
+    }
+    doc.online = true;
+    doc.lastSeen = new Date();
+    await doc.save();
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+// API: Get status of both devices
+app.get('/api/device-status', async (req, res) => {
+  try {
+    const now = Date.now();
+    const statuses = await DeviceStatus.find({});
+    // Consider device offline if lastSeen > 15s ago
+    const result = {
+      raspberryPi: { online: false, lastSeen: null },
+      nodeMCU: { online: false, lastSeen: null }
+    };
+    for (const s of statuses) {
+      const isOnline = s.lastSeen && (now - new Date(s.lastSeen).getTime() < 15000);
+      result[s.device] = {
+        online: !!isOnline,
+        lastSeen: s.lastSeen
+      };
+    }
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch device status' });
+  }
+});
 async function getOrCreateDeviceRestart() {
   let doc = await DeviceRestart.findOne();
   if (!doc) {

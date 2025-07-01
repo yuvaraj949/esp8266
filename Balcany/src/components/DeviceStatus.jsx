@@ -12,7 +12,7 @@ export default function DeviceStatus() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('/api/device-status');
+        const res = await fetch('https://esp8266-server.vercel.app/api/device-status');
         const data = await res.json();
         console.log('Device status:', data); // Add this line
         setStatus(data);

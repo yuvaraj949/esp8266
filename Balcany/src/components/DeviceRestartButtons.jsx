@@ -7,12 +7,18 @@ export default function DeviceRestartButtons() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch current trigger state
+  // Poll trigger state every 2 seconds
   useEffect(() => {
-    fetch(`${API_BASE}/restart-trigger`)
-      .then(res => res.json())
-      .then(data => setTrigger(data))
-      .catch(() => setError('Failed to fetch trigger state'));
+    let isMounted = true;
+    const fetchTrigger = () => {
+      fetch(`${API_BASE}/restart-trigger`)
+        .then(res => res.json())
+        .then(data => { if (isMounted) setTrigger(data); })
+        .catch(() => { if (isMounted) setError('Failed to fetch trigger state'); });
+    };
+    fetchTrigger();
+    const interval = setInterval(fetchTrigger, 2000);
+    return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
   const handleRestart = async (device) => {

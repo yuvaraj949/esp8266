@@ -5,14 +5,12 @@ import HistoryGraph from './components/HistoryGraph';
 import PumpSwitch from './components/PumpSwitch';
 import DeviceRestartButtons from './components/DeviceRestartButtons';
 import './App.css'
-import DeviceStatusHeader from './components/DeviceStatusHeader';
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <div className="garden-app">
-      <DeviceStatusHeader />
       <h1>🌿 Smart Garden Dashboard</h1>
       <div className="dashboard">
         <SensorDisplay />

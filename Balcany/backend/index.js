@@ -179,44 +179,7 @@ app.use(cors({
   },
   credentials: true,
 }));
-
 app.use(express.json());
-
-// --- MQTT Device Status Integration ---
-let deviceStatus = {
-  raspberrypi: { online: false, lastSeen: null, ping: null },
-  nodemcu: { online: false, lastSeen: null }
-};
-
-// MQTT Setup
-const mqttClient = mqtt.connect('mqtt://localhost:1883');
-
-mqttClient.on('connect', () => {
-  mqttClient.subscribe('status/raspberrypi');
-  mqttClient.subscribe('status/nodemcu');
-});
-
-mqttClient.on('message', (topic, message) => {
-  try {
-    const payload = JSON.parse(message.toString());
-    if (topic === 'status/raspberrypi') {
-      deviceStatus.raspberrypi.online = payload.online;
-      deviceStatus.raspberrypi.lastSeen = payload.timestamp;
-      deviceStatus.raspberrypi.ping = payload.nodemcu_ping_ms || null;
-    }
-    if (topic === 'status/nodemcu') {
-      deviceStatus.nodemcu.online = payload.online;
-      deviceStatus.nodemcu.lastSeen = payload.timestamp;
-    }
-  } catch (e) {
-    // Ignore malformed MQTT messages
-  }
-});
-
-// API endpoint to get status
-app.get('/api/status', (req, res) => {
-  res.json(deviceStatus);
-});
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/garden', {

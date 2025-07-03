@@ -251,6 +251,37 @@ function HistoryGraph() {
             itemStyle={{ fontSize: 13, margin: 0, padding: 0 }}
             labelStyle={{ fontWeight: 600, color: '#00eaff', fontSize: 14, marginBottom: 4 }}
             labelFormatter={formatXAxisLabel}
+            // Custom sort order: Temperature, Humidity, Time
+            formatter={(value, name, props) => {
+              // value: value of the item
+              // name: dataKey ("temperature" or "humidity")
+              // props: { payload, ... }
+              return [value, name === 'temperature' ? 'Temperature (°C)' : name === 'humidity' ? 'Humidity (%)' : name];
+            }}
+            // Custom item sorter: temperature first, then humidity, then others
+            itemSorter={(itemA, itemB) => {
+              const order = { temperature: 0, humidity: 1 };
+              return (order[itemA.dataKey] ?? 2) - (order[itemB.dataKey] ?? 2);
+            }}
+            // Custom content to show time last
+            content={(props) => {
+              if (!props.active || !props.payload || !props.payload.length) return null;
+              // Sort items: temperature, humidity, then others
+              const order = { temperature: 0, humidity: 1 };
+              const sorted = [...props.payload].sort((a, b) => (order[a.dataKey] ?? 2) - (order[b.dataKey] ?? 2));
+              return (
+                <div style={{ background: 'rgba(35,37,38,0.85)', border: '1px solid #00eaff', color: '#fff', borderRadius: 10, fontSize: 14, minWidth: 0, maxWidth: 220, padding: 10 }}>
+                  {sorted.map((entry, i) => (
+                    <div key={i} style={{ color: entry.color, fontWeight: 600, marginBottom: 2 }}>
+                      {entry.name}: {entry.value}
+                    </div>
+                  ))}
+                  <div style={{ color: '#00eaff', fontWeight: 600, marginTop: 6, fontSize: 13 }}>
+                    {formatXAxisLabel(props.label)}
+                  </div>
+                </div>
+              );
+            }}
           />
           <Legend wrapperStyle={{ color: '#fff' }} />
           <Line yAxisId="left" type="monotone" dataKey="temperature" name="Temperature (°C)" stroke="#ffb347" strokeWidth={2} dot={false} activeDot={{ r: 6 }} connectNulls={false} />

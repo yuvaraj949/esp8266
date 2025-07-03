@@ -269,11 +269,13 @@ function HistoryGraph() {
               // Sort items: temperature, humidity, then others
               const order = { temperature: 0, humidity: 1 };
               const sorted = [...props.payload].sort((a, b) => (order[a.dataKey] ?? 2) - (order[b.dataKey] ?? 2));
+              // Format value to 2 decimal places if number
+              const formatValue = (val) => (typeof val === 'number' ? val.toFixed(2) : val);
               return (
                 <div style={{ background: 'rgba(35,37,38,0.85)', border: '1px solid #00eaff', color: '#fff', borderRadius: 10, fontSize: 14, minWidth: 0, maxWidth: 220, padding: 10 }}>
                   {sorted.map((entry, i) => (
                     <div key={i} style={{ color: entry.color, fontWeight: 600, marginBottom: 2 }}>
-                      {entry.name}: {entry.value}
+                      {entry.name}: {formatValue(entry.value)}
                     </div>
                   ))}
                   <div style={{ color: '#00eaff', fontWeight: 600, marginTop: 6, fontSize: 13 }}>

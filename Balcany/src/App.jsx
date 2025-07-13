@@ -2,7 +2,6 @@ import { useState } from 'react'
 import SensorDisplay from './components/SensorDisplay';
 import HistoryGraph from './components/HistoryGraph';
 import PumpSwitch from './components/PumpSwitch';
-import DeviceRestartButtons from './components/DeviceRestartButtons';
 import DeviceStatus from './components/DeviceStatus';
 import './App.css'
 
@@ -18,9 +17,6 @@ function App() {
         <div className="history-graph-wrapper">
           <HistoryGraph />
         </div>
-      </div>
-      <div style={{ margin: '32px 0' }}>
-        <DeviceRestartButtons />
       </div>
       <DeviceStatus />
       <footer style={{ marginTop: 40, color: '#888' }}>

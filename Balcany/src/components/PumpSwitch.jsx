@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiRequest, API_ENDPOINTS } from '../config/api.js';
 
 function PumpSwitch() {
   const [triggered, setTriggered] = useState(false);
@@ -12,14 +13,25 @@ function PumpSwitch() {
     let mounted = true;
     const fetchStatus = async () => {
       try {
-        const res = await fetch('https://esp8266-server.vercel.app/api/pump');
-        const data = await res.json();
+        console.log('Fetching pump status...');
+        const data = await apiRequest(API_ENDPOINTS.PUMP_GET);
+        console.log('Pump status response:', data);
+        console.log('Current triggered state:', triggered);
+        console.log('Data.status value:', data.status);
+        console.log('Will set triggered to:', !!data.status);
+        
         if (mounted) {
           setTriggered(!!data.status);
           setLastUpdated(new Date());
           setOptimistic(false); // Confirmed by backend
         }
-      } catch {}
+      } catch (error) {
+        console.error('Failed to fetch pump status:', error);
+        console.error('Status fetch error details:', {
+          message: error.message,
+          stack: error.stack
+        });
+      }
     };
     fetchStatus();
     const interval = setInterval(fetchStatus, 1000);
@@ -31,17 +43,36 @@ function PumpSwitch() {
     setError(null);
     setLoading(true);
     setOptimistic(true);
-    setTriggered((prev) => !prev); // Optimistically update UI
+    
+    // Calculate the new state before updating
+    const newState = !triggered;
+    setTriggered(newState); // Optimistically update UI
+    
     try {
-      await fetch('https://esp8266-server.vercel.app/api/pump', {
+      console.log('Sending pump switch request:', { on: newState });
+      console.log('API endpoint:', API_ENDPOINTS.PUMP_POST);
+      
+      const response = await apiRequest(API_ENDPOINTS.PUMP_POST, {
         method: 'POST',
-        body: JSON.stringify({ on: !triggered }),
-        headers: { 'Content-Type': 'application/json' }
+        body: JSON.stringify({ on: newState })
       });
+      
+      console.log('Pump switch response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response || {}));
+      
       // The polling will update the UI to the backend state within 1s
     } catch (e) {
-      setError('Failed to switch pump');
+      console.error('Pump switch error:', e);
+      console.error('Error details:', {
+        message: e.message,
+        stack: e.stack,
+        name: e.name
+      });
+      setError(`Failed to switch pump: ${e.message}`);
       setOptimistic(false);
+      // Revert the optimistic update on error
+      setTriggered(!newState);
     }
     setLoading(false);
   };

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { apiRequest, API_ENDPOINTS } from '../config/api.js';
 
 
 export default function SensorDisplay() {
@@ -10,8 +11,7 @@ export default function SensorDisplay() {
     let mounted = true;
     const fetchLatest = async () => {
       try {
-        const res = await fetch('https://esp8266-server.vercel.app/api/data/latest');
-        const data = await res.json();
+        const data = await apiRequest(API_ENDPOINTS.DATA_LATEST);
         if (mounted) setLatest(data);
       } catch (e) {
         if (mounted) setLatest(null);

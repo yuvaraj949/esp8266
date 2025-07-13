@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { apiRequest, API_ENDPOINTS } from '../config/api.js';
 
 function HistoryGraph() {
   const [history, setHistory] = useState([]);
@@ -13,17 +14,16 @@ function HistoryGraph() {
   useEffect(() => {
     let mounted = true;
     const fetchHistory = async () => {
-      let url = 'https://esp8266-server.vercel.app/api/data/history';
       const selected = timeScales.find(t => t.value === timeScale);
+      let params = new URLSearchParams();
       if (selected) {
         const since = Date.now() - selected.ms;
-        url += `?since=${since}&limit=1000`;
-      } else {
-        url += '?limit=1000';
+        params.append('since', since);
       }
+      params.append('limit', '1000');
+      
       try {
-        const res = await fetch(url);
-        const data = await res.json();
+        const data = await apiRequest(`${API_ENDPOINTS.DATA_HISTORY}?${params.toString()}`);
         if (mounted) setHistory(data);
       } catch (e) {
         if (mounted) setHistory([]);

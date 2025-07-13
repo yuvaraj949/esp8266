@@ -2,8 +2,8 @@
 const SUPABASE_URL = 'https://zghimexugkubkyvglqmr.supabase.co';
 const SUPABASE_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaGltZXh1Z2t1Ymt5dmdscW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyOTM0MTYsImV4cCI6MjA2Nzg2OTQxNn0.-CQPk25p5AZX90uyU5OSoR16EJYNd7piEfs718JIDNk'; // Replace with your actual JWT token
 
-// Use proxy in development, direct URL in production
-const isDevelopment = import.meta.env.DEV;
+// Force development mode to use proxy (fixes CORS issues when hosting on Raspberry Pi)
+const isDevelopment = true; // Changed from import.meta.env.DEV to true
 const BASE_URL = isDevelopment ? '' : SUPABASE_URL;
 const API_PREFIX = isDevelopment ? '/api' : `${SUPABASE_URL}/functions/v1`;
 

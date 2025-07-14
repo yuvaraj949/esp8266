@@ -25,9 +25,16 @@ interface RestartTriggerStatus {
 export function RestartButton() {
   const [isRestarting, setIsRestarting] = useState(false)
   const [lastRestart, setLastRestart] = useState<string | null>(null)
+  const [formattedLastRestart, setFormattedLastRestart] = useState<string>("")
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [triggerStatus, setTriggerStatus] = useState<RestartTriggerStatus | null>(null)
   const [isLoadingStatus, setIsLoadingStatus] = useState(false)
+
+  useEffect(() => {
+    if (lastRestart) {
+      setFormattedLastRestart(new Date(lastRestart).toLocaleString())
+    }
+  }, [lastRestart])
 
   const fetchTriggerStatus = async () => {
     setIsLoadingStatus(true)
@@ -63,14 +70,14 @@ export function RestartButton() {
 
       if (response.success) {
         setActionMessage("Restart command sent successfully")
-        setLastRestart(new Date().toLocaleString())
+        setLastRestart(new Date().toISOString())
         // Fetch updated trigger status
         setTimeout(fetchTriggerStatus, 1000)
       }
     } catch (error) {
       console.error("Failed to restart device:", error)
       setActionMessage("Error: Could not restart device")
-      setLastRestart(new Date().toLocaleString())
+      setLastRestart(new Date().toISOString())
     } finally {
       setTimeout(() => {
         setIsRestarting(false)
@@ -163,7 +170,7 @@ export function RestartButton() {
 
         {lastRestart && (
           <div className="text-sm text-gray-400 text-center pt-2 border-t border-gray-600">
-            Last restart: {lastRestart}
+            Last restart: {formattedLastRestart}
           </div>
         )}
 

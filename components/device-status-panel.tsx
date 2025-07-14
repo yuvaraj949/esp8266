@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Wifi, WifiOff, Clock } from "lucide-react"
@@ -17,9 +18,13 @@ interface DeviceStatusPanelProps {
 }
 
 export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString()
-  }
+  const [formattedLastSeen, setFormattedLastSeen] = useState<string>("")
+
+  useEffect(() => {
+    if (status?.ESP32?.lastSeen) {
+      setFormattedLastSeen(new Date(status.ESP32.lastSeen).toLocaleString())
+    }
+  }, [status?.ESP32?.lastSeen])
 
   const getTimeSince = (timestamp: string) => {
     const now = new Date()
@@ -79,7 +84,7 @@ export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
                     <span className="text-gray-300 text-sm">Last Seen</span>
                   </div>
                   <div className="text-white font-medium">{getTimeSince(status.ESP32?.lastSeen)}</div>
-                  <div className="text-xs text-gray-400 mt-1">{formatTimestamp(status.ESP32?.lastSeen)}</div>
+                  <div className="text-xs text-gray-400 mt-1">{formattedLastSeen}</div>
                 </div>
               )}
             </div>

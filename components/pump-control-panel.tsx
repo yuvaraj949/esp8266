@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +20,13 @@ interface PumpControlPanelProps {
 export function PumpControlPanel({ status, onStatusChange }: PumpControlPanelProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [lastAction, setLastAction] = useState<string | null>(null)
+  const [formattedLastChanged, setFormattedLastChanged] = useState<string>("")
+
+  useEffect(() => {
+    if (status?.last_changed) {
+      setFormattedLastChanged(new Date(status.last_changed).toLocaleString())
+    }
+  }, [status?.last_changed])
 
   const togglePump = async (newState: boolean) => {
     setIsUpdating(true)
@@ -51,10 +58,6 @@ export function PumpControlPanel({ status, onStatusChange }: PumpControlPanelPro
       setIsUpdating(false)
       setTimeout(() => setLastAction(null), 3000)
     }
-  }
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString()
   }
 
   return (
@@ -97,7 +100,7 @@ export function PumpControlPanel({ status, onStatusChange }: PumpControlPanelPro
 
             {status.last_changed && (
               <div className="text-sm text-gray-400 text-center pt-2 border-t border-gray-600">
-                Last changed: {formatTimestamp(status.last_changed)}
+                Last changed: {formattedLastChanged}
               </div>
             )}
 

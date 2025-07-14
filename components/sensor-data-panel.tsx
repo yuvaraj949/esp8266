@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Thermometer, Droplets, Sprout } from "lucide-react"
 
@@ -16,9 +17,13 @@ interface SensorDataPanelProps {
 }
 
 export function SensorDataPanel({ data }: SensorDataPanelProps) {
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString()
-  }
+  const [formattedTimestamp, setFormattedTimestamp] = useState<string>("")
+
+  useEffect(() => {
+    if (data?.timestamp) {
+      setFormattedTimestamp(new Date(data.timestamp).toLocaleString())
+    }
+  }, [data?.timestamp])
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -71,7 +76,7 @@ export function SensorDataPanel({ data }: SensorDataPanelProps) {
 
             {data.timestamp && (
               <div className="text-sm text-gray-400 text-center pt-2 border-t border-gray-600">
-                Last updated: {formatTimestamp(data.timestamp)}
+                Last updated: {formattedTimestamp}
               </div>
             )}
           </>

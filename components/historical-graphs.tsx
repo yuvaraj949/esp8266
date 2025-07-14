@@ -25,20 +25,27 @@ export function HistoricalGraphs() {
   const fetchHistoricalData = async (range: string) => {
     setLoading(true)
     try {
-      const hoursBack = range === "24h" ? 24 : range === "7d" ? 168 : 1
-      const now = Date.now();
-      const since = new Date(now - hoursBack * 60 * 60 * 1000).toISOString()
+      let since;
+      if (range === "7d") {
+        const now = new Date();
+        const sinceDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        sinceDate.setUTCHours(0, 0, 0, 0); // Start of the day, 7 days ago
+        since = sinceDate.toISOString();
+      } else if (range === "24h") {
+        since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      } else {
+        since = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
+      }
       let limit = 12; // default for 1h
       if (range === "24h") limit = 144;
       if (range === "7d") limit = 168;
 
-      const response = await apiRequest(`/api-data-history?since=${since}`)
-      // Only include data within the time window
-      const sinceDate = new Date(since);
-      const filtered = response.filter((item: any) => new Date(item.timestamp) >= sinceDate);
+      const response = await apiRequest(`/api-data-history?since=${since}&limit=5000`)
       // Sort ascending (oldest to newest)
-      const sorted = filtered.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      setData(sorted)
+      const sorted = response.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      // Debug log
+      console.log("First timestamp:", sorted[0]?.timestamp, "Last timestamp:", sorted[sorted.length-1]?.timestamp);
+      setData(sorted);
     } catch (error) {
       console.error("Failed to fetch historical data:", error)
     } finally {
@@ -82,9 +89,9 @@ export function HistoricalGraphs() {
     return ticks;
   }, [formattedData, timeRange]);
 
+  // Custom Tooltip to match dark theme
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      // label is the timestamp string
       const date = new Date(label);
       const formatted = date.toLocaleString([], {
         year: "numeric",
@@ -95,18 +102,18 @@ export function HistoricalGraphs() {
         hour12: true
       });
       return (
-        <div className="bg-gray-800 border border-gray-600 rounded-lg p-3">
-          <p className="text-white font-medium">{`Time: ${formatted}`}</p>
+        <div style={{ background: '#1f2937', border: '1px solid #374151', borderRadius: 8, padding: 12, color: '#fff', minWidth: 180 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>{`Time: ${formatted}`}</div>
           {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {`${entry.name}: ${entry.value}${entry.name.includes("Temperature") ? "°C" : "%"}`}
-            </p>
+            <div key={index} style={{ color: entry.color, fontWeight: 500 }}>
+              {`${entry.name}: ${entry.value}${entry.name === "Temperature" ? "°C" : entry.name === "Humidity" ? "%" : ""}`}
+            </div>
           ))}
         </div>
-      )
+      );
     }
-    return null
-  }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -142,25 +149,28 @@ export function HistoricalGraphs() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={formattedData}>
+              <LineChart data={formattedData.map(d => ({ ...d, ts: new Date(d.timestamp).getTime() }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
-                  dataKey="timestamp"
-                  stroke="#9CA3AF"
-                  fontSize={12}
-                  ticks={xTicks}
-                  minTickGap={10}
-                  tickFormatter={(value) => {
+                  dataKey="ts"
+                  type="number"
+                  scale="time"
+                  domain={['dataMin', 'dataMax']}
+                  tickFormatter={value => {
                     const date = new Date(value);
-                    return (
-                      date.toLocaleDateString([], { month: "short", day: "numeric" }) +
+                    return date.toLocaleDateString([], { month: "short", day: "numeric" }) +
                       " " +
-                      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })
-                    );
+                      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
                   }}
                 />
                 <YAxis stroke="#9CA3AF" fontSize={12} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip
+                  labelFormatter={value => {
+                    const date = new Date(value);
+                    return date.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: true });
+                  }}
+                  content={<CustomTooltip />}
+                />
                 <Legend />
                 <Line
                   type="monotone"
@@ -170,7 +180,14 @@ export function HistoricalGraphs() {
                   name="Temperature"
                   dot={false}
                 />
-                <Line type="monotone" dataKey="humidity" stroke="#3B82F6" strokeWidth={2} name="Humidity" dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="humidity"
+                  stroke="#3B82F6"
+                  strokeWidth={2}
+                  name="Humidity"
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -192,25 +209,28 @@ export function HistoricalGraphs() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={formattedData}>
+              <LineChart data={formattedData.map(d => ({ ...d, ts: new Date(d.timestamp).getTime() }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
-                  dataKey="timestamp"
-                  stroke="#9CA3AF"
-                  fontSize={12}
-                  ticks={xTicks}
-                  minTickGap={10}
-                  tickFormatter={(value) => {
+                  dataKey="ts"
+                  type="number"
+                  scale="time"
+                  domain={['dataMin', 'dataMax']}
+                  tickFormatter={value => {
                     const date = new Date(value);
-                    return (
-                      date.toLocaleDateString([], { month: "short", day: "numeric" }) +
+                    return date.toLocaleDateString([], { month: "short", day: "numeric" }) +
                       " " +
-                      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })
-                    );
+                      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
                   }}
                 />
                 <YAxis stroke="#9CA3AF" fontSize={12} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip
+                  labelFormatter={value => {
+                    const date = new Date(value);
+                    return date.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: true });
+                  }}
+                  content={<CustomTooltip />}
+                />
                 <Legend />
                 <Line
                   type="monotone"

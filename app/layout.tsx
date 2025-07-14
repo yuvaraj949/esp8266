@@ -8,12 +8,12 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Smart Garden Dashboard",
-  description: "Monitor and control your smart garden with ESP32 sensors",
+  description: "Monitor and control your smart garden",
   generator: 'v0.dev',
   icons: {
-    icon: "/placeholder-logo.png"
-  }
-}
+    icon: "/favicon.svg",
+  },
+};
 
 export default function RootLayout({
   children,

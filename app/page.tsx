@@ -8,68 +8,93 @@ import { DeviceStatusPanel } from "@/components/device-status-panel"
 import { RestartButton } from "@/components/restart-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle, Wifi } from "lucide-react"
-import { apiRequest } from "@/lib/api"
+import {
+  fetchLatestSensorData,
+  fetchPumpStatus,
+  // fetchDeviceStatus, // Uncomment if you add device status to Firestore
+} from "@/lib/api"
+
+const DASHBOARD_SENSOR_POLL_INTERVAL = 30 * 1000; // 30 seconds
+const DASHBOARD_PUMP_POLL_INTERVAL = 60 * 1000; // 1 minute
 
 export default function Dashboard() {
-  const [sensorData, setSensorData] = useState(null)
-  const [pumpStatus, setPumpStatus] = useState(null)
-  const [deviceStatus, setDeviceStatus] = useState(null)
+  const [sensorData, setSensorData] = useState<{
+    temperature?: number;
+    humidity?: number;
+    soil_moisture1?: number;
+    soil_moisture2?: number;
+    timestamp?: string;
+  } | null>(null)
+  const [pumpStatus, setPumpStatus] = useState<{
+    status: boolean;
+    last_changed?: string;
+  } | null>(null)
+  const [deviceStatus, setDeviceStatus] = useState<{ ESP32: { online: boolean; lastSeen: string } } | null>(null)
   const [loading, setLoading] = useState(true)
   const [connectionError, setConnectionError] = useState(false)
+  const [lastPumpPoll, setLastPumpPoll] = useState(Date.now())
 
-  // Fetch latest sensor data
-  const fetchSensorData = async () => {
+  // Fetch all dashboard data from Firestore (sensor + device status)
+  const fetchSensorAndDeviceData = async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     try {
-      const data = await apiRequest("/api-data-latest")
-      setSensorData(data)
+      const sensor = await fetchLatestSensorData()
+      setSensorData(sensor)
+      // Infer device status from sensor timestamp
+      if (sensor && sensor.timestamp) {
+        const now = Date.now()
+        const lastSeen = new Date(sensor.timestamp).toISOString()
+        const diff = now - new Date(sensor.timestamp).getTime()
+        const online = diff < 2 * DASHBOARD_SENSOR_POLL_INTERVAL // 1 minute
+        setDeviceStatus({ ESP32: { online, lastSeen } })
+      } else {
+        setDeviceStatus(null)
+      }
       setConnectionError(false)
     } catch (error) {
-      console.error("Failed to fetch sensor data:", error)
+      console.error("Failed to fetch dashboard data:", error)
       setConnectionError(true)
+    } finally {
+      if (showLoading) setLoading(false)
     }
   }
 
-  // Fetch pump status
-  const fetchPumpStatus = async () => {
+  // Fetch pump status (separately, every 1 min or after user action)
+  const fetchPumpStatusAndSet = async () => {
     try {
-      const data = await apiRequest("/api-pump-get")
-      setPumpStatus(data)
+      const pump = await fetchPumpStatus()
+      setPumpStatus(pump)
+      setLastPumpPoll(Date.now())
     } catch (error) {
       console.error("Failed to fetch pump status:", error)
     }
   }
 
-  // Fetch device status
-  const fetchDeviceStatus = async () => {
-    try {
-      const data = await apiRequest("/api-device-status")
-      setDeviceStatus(data)
-    } catch (error) {
-      console.error("Failed to fetch device status:", error)
-    }
-  }
-
-  // Initial data fetch
   useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true)
-      await Promise.all([fetchSensorData(), fetchPumpStatus(), fetchDeviceStatus()])
-      setLoading(false)
-    }
-
-    fetchAllData()
+    fetchSensorAndDeviceData(true)
+    fetchPumpStatusAndSet()
   }, [])
 
-  // Set up polling for real-time updates
+  // Poll sensor/device status every 30s
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchSensorData()
-      fetchPumpStatus()
-      fetchDeviceStatus()
-    }, 15000) // Poll every 15 seconds
-
+      fetchSensorAndDeviceData(false)
+    }, DASHBOARD_SENSOR_POLL_INTERVAL)
     return () => clearInterval(interval)
   }, [])
+
+  // Poll pump status every 1 min
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPumpStatusAndSet()
+    }, DASHBOARD_PUMP_POLL_INTERVAL)
+    return () => clearInterval(interval)
+  }, [])
+
+  // When user toggles pump, refresh pump status after action
+  const handlePumpStatusChange = () => {
+    fetchPumpStatusAndSet()
+  }
 
   if (loading) {
     return (
@@ -118,7 +143,7 @@ export default function Dashboard() {
 
           {/* Pump Control Panel */}
           <div className="lg:col-span-1">
-            <PumpControlPanel status={pumpStatus} onStatusChange={fetchPumpStatus} />
+            <PumpControlPanel status={pumpStatus} onStatusChange={handlePumpStatusChange} />
           </div>
 
           {/* Historical Graphs */}

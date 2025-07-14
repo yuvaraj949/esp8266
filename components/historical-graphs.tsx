@@ -1,278 +1,302 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
-import { TrendingUp, Droplets } from "lucide-react"
-import { apiRequest } from "@/lib/api"
+import React, { useEffect, useState } from "react"
+import ReactECharts from "echarts-for-react"
+import { fetchHistoricalSensorData } from "@/lib/api"
+import { ChartContainer } from "@/components/ui/chart"
+import { useTheme } from "next-themes"
 
-interface HistoricalData {
-  timestamp: string
-  temperature?: number
-  humidity?: number
-  soil_moisture1?: number
-  soil_moisture2?: number
-  formattedLabel?: string
+const TIME_RANGES = [
+  { label: "1 Hour", value: "1h", ms: 1 * 60 * 60 * 1000 },
+  { label: "12 Hours", value: "12h", ms: 12 * 60 * 60 * 1000 },
+  { label: "24 Hours", value: "24h", ms: 24 * 60 * 60 * 1000 },
+]
+
+function generateTimeGrid(range: string, intervalMinutes = 5) {
+  const now = new Date()
+  let start: Date
+  if (range === "24h") {
+    start = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+  } else if (range === "12h") {
+    start = new Date(now.getTime() - 12 * 60 * 60 * 1000)
+  } else {
+    // 1h
+    start = new Date(now.getTime() - 1 * 60 * 60 * 1000)
+  }
+  const grid = []
+  for (let t = start.getTime(); t <= now.getTime(); t += intervalMinutes * 60 * 1000) {
+    grid.push(new Date(t))
+  }
+  // Ensure exact start and end are included
+  if (grid.length === 0 || grid[0].getTime() !== start.getTime()) {
+    grid.unshift(start)
+  }
+  if (grid[grid.length - 1].getTime() !== now.getTime()) {
+    grid.push(now)
+  }
+  return grid
 }
 
 export function HistoricalGraphs() {
-  const [data, setData] = useState<HistoricalData[]>([])
-  const [loading, setLoading] = useState(false)
   const [timeRange, setTimeRange] = useState("24h")
-  const [formattedData, setFormattedData] = useState<HistoricalData[]>([])
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const { resolvedTheme } = useTheme();
 
-  // Downsample to 5-minute intervals
-  function downsample(data: HistoricalData[], intervalMinutes = 5) {
-    if (data.length === 0) return [];
-    const result = [];
-    let lastTime = null;
-    for (const item of data) {
-      const t = new Date(item.timestamp).getTime();
-      if (
-        lastTime === null ||
-        t - lastTime >= intervalMinutes * 60 * 1000
-      ) {
-        result.push(item);
-        lastTime = t;
-      }
-    }
-    // Always include the last point
-    if (result[result.length - 1] !== data[data.length - 1]) {
-      result.push(data[data.length - 1]);
-    }
-    return result;
+  // Theme-aware colors
+  const isDark = resolvedTheme === 'dark';
+  const bgColor = isDark ? '#1f2937' : '#fff';
+  const gridColor = isDark ? '#374151' : '#e5e7eb';
+  const axisColor = isDark ? '#9ca3af' : '#374151';
+  const textColor = isDark ? '#e5e7eb' : '#374151';
+  const legendTextColor = isDark ? '#d1d5db' : '#374151';
+
+  // Chart config for color theming (optional, can be extended)
+  const chartConfig = {
+    temperature: { color: '#F87171', label: 'Temperature' },
+    humidity: { color: '#60A5FA', label: 'Humidity' },
+    soil_moisture1: { color: '#34D399', label: 'Soil Moisture 1' },
+    soil_moisture2: { color: '#A78BFA', label: 'Soil Moisture 2' },
   }
 
-  const fetchHistoricalData = async (range: string) => {
-    setLoading(true)
-    try {
-      let since;
-      if (range === "24h") {
-        since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      } else if (range === "12h") {
-        since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-      } else {
-        // 1h
-        since = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
-      }
-      const response = await apiRequest(`/api-data-history?since=${since}&limit=5000`)
-      // Sort ascending (oldest to newest)
-      const sorted = response.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      const downsampled = downsample(sorted, 5);
-      console.log("First timestamp:", downsampled[0]?.timestamp, "Last timestamp:", downsampled[downsampled.length-1]?.timestamp);
-      setData(downsampled);
-    } catch (error) {
-      console.error("Failed to fetch historical data:", error)
-    } finally {
-      setLoading(false)
-    }
+  // ECharts options for temperature/humidity
+  const tempHumOptions = {
+    animation: false,
+    // backgroundColor: 'transparent', // Ensure no background color is set
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: bgColor,
+      borderColor: gridColor,
+      textStyle: { color: textColor },
+    },
+    toolbox: { feature: { saveAsImage: {} } },
+    legend: {
+      data: ['Temperature', 'Humidity'],
+      textStyle: { color: legendTextColor },
+    },
+    xAxis: {
+      type: 'time',
+      min: data[0]?.timestamp,
+      max: data[data.length - 1]?.timestamp,
+      axisLabel: {
+        formatter: (value: string) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        color: axisColor,
+        rotate: 30, // Rotate labels for readability
+        interval: 'auto', // Let ECharts auto-hide overlapping labels
+      },
+      axisLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: gridColor } },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: axisColor },
+      axisLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: gridColor } },
+    },
+    series: [
+      {
+        name: 'Temperature',
+        type: 'line',
+        showSymbol: false,
+        connectNulls: false,
+        data: data.map(d => [d.timestamp, d.temperature]),
+        lineStyle: { color: chartConfig.temperature.color },
+      },
+      {
+        name: 'Humidity',
+        type: 'line',
+        showSymbol: false,
+        connectNulls: false,
+        data: data.map(d => [d.timestamp, d.humidity]),
+        lineStyle: { color: chartConfig.humidity.color },
+      },
+    ],
+    // Remove or comment out dataZoom to disable zooming and scrolling
+    // dataZoom: [
+    //   { type: 'inside', throttle: 50 },
+    //   { type: 'slider', backgroundColor: 'transparent', dataBackground: { lineStyle: { color: gridColor }, areaStyle: { color: gridColor } }, borderColor: gridColor, textStyle: { color: textColor } },
+    // ],
+    grid: { left: 40, right: 20, top: 40, bottom: 40, containLabel: true, backgroundColor: 'transparent' },
+  }
+
+  // ECharts options for soil moisture
+  const soilOptions = {
+    animation: false,
+    // backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: bgColor,
+      borderColor: gridColor,
+      textStyle: { color: textColor },
+    },
+    toolbox: { feature: { saveAsImage: {} } },
+    legend: {
+      data: ['Soil Moisture 1', 'Soil Moisture 2'],
+      textStyle: { color: legendTextColor },
+    },
+    xAxis: {
+      type: 'time',
+      min: data[0]?.timestamp,
+      max: data[data.length - 1]?.timestamp,
+      axisLabel: {
+        formatter: (value: string) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        color: axisColor,
+        rotate: 30, // Rotate labels for readability
+        interval: 'auto', // Let ECharts auto-hide overlapping labels
+      },
+      axisLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: gridColor } },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: axisColor },
+      axisLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: gridColor } },
+    },
+    series: [
+      {
+        name: 'Soil Moisture 1',
+        type: 'line',
+        showSymbol: false,
+        connectNulls: false,
+        data: data.map(d => [d.timestamp, d.soil_moisture1]),
+        lineStyle: { color: chartConfig.soil_moisture1.color },
+      },
+      {
+        name: 'Soil Moisture 2',
+        type: 'line',
+        showSymbol: false,
+        connectNulls: false,
+        data: data.map(d => [d.timestamp, d.soil_moisture2]),
+        lineStyle: { color: chartConfig.soil_moisture2.color },
+      },
+    ],
+    // Remove or comment out dataZoom to disable zooming and scrolling
+    // dataZoom: [
+    //   { type: 'inside', throttle: 50 },
+    //   { type: 'slider', backgroundColor: 'transparent', dataBackground: { lineStyle: { color: gridColor }, areaStyle: { color: gridColor } }, borderColor: gridColor, textStyle: { color: textColor } },
+    // ],
+    grid: { left: 40, right: 20, top: 40, bottom: 40, containLabel: true, backgroundColor: 'transparent' },
   }
 
   useEffect(() => {
-    fetchHistoricalData(timeRange)
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        let since
+        if (timeRange === "24h") {
+          since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        } else if (timeRange === "12h") {
+          since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
+        } else {
+          // 1h
+          since = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+        }
+        const response = await fetchHistoricalSensorData({ since, limit: 5000 })
+        // Sort ascending (oldest to newest)
+        const sorted = response.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        // Generate time grid
+        const grid = generateTimeGrid(timeRange, 5)
+        // Find the earliest data timestamp
+        const firstDataTime = sorted.length > 0 ? new Date(sorted[0].timestamp).getTime() : null
+        // Align data to grid, fill undefined before first data point
+        let filled = grid.map((dt) => {
+          const t = dt.getTime()
+          if (firstDataTime && t < firstDataTime) {
+            // Before first data point, always undefined
+            return {
+              timestamp: dt.toISOString(),
+              temperature: undefined,
+              humidity: undefined,
+              soil_moisture1: undefined,
+              soil_moisture2: undefined,
+            }
+          }
+          // Find the closest data point within 2.5 minutes
+          const match = sorted.find((item: any) => {
+            const diff = Math.abs(new Date(item.timestamp).getTime() - t)
+            return diff <= 2.5 * 60 * 1000
+          })
+          return match
+            ? { ...match, timestamp: dt.toISOString() }
+            : {
+                timestamp: dt.toISOString(),
+                temperature: undefined,
+                humidity: undefined,
+                soil_moisture1: undefined,
+                soil_moisture2: undefined,
+              }
+        })
+        // Ensure first and last points are at the exact start/end
+        const startISO = grid[0].toISOString()
+        const endISO = grid[grid.length - 1].toISOString()
+        if (filled[0].timestamp !== startISO) {
+          filled.unshift({
+            timestamp: startISO,
+            temperature: undefined,
+            humidity: undefined,
+            soil_moisture1: undefined,
+            soil_moisture2: undefined,
+          })
+        }
+        if (filled[filled.length - 1].timestamp !== endISO) {
+          filled.push({
+            timestamp: endISO,
+            temperature: undefined,
+            humidity: undefined,
+            soil_moisture1: undefined,
+            soil_moisture2: undefined,
+          })
+        }
+        setData(filled)
+      } catch (error) {
+        console.error("Failed to fetch historical data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [timeRange])
 
-  // Format timestamps for X-axis based on range
-  useEffect(() => {
-    setFormattedData(
-      data.map((item: any) => {
-        let label = ""
-        const date = new Date(item.timestamp)
-        if (timeRange === "1h" || timeRange === "12h" || timeRange === "24h") {
-          label = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        }
-        return { ...item, formattedLabel: label }
-      })
-    )
-  }, [data, timeRange])
-
-  // Memoize tick values to reduce overlap
-  const xTicks = useMemo(() => {
-    if (formattedData.length === 0) return [];
-    let ticks: string[] = [];
-    if (timeRange === "1h") {
-      ticks = formattedData.map((d) => d.timestamp);
-    } else if (timeRange === "24h") {
-      ticks = formattedData.filter((_, i) => i % 12 === 0).map((d) => d.timestamp);
-    } else if (timeRange === "7d") {
-      ticks = formattedData.filter((_, i) => i % 24 === 0).map((d) => d.timestamp);
-    } else {
-      ticks = formattedData.map((d) => d.timestamp);
-    }
-    return ticks;
-  }, [formattedData, timeRange]);
-
-  // Custom Tooltip to match dark theme
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const date = new Date(label);
-      const formatted = date.toLocaleString([], {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true
-      });
-      return (
-        <div style={{ background: '#1f2937', border: '1px solid #374151', borderRadius: 8, padding: 12, color: '#fff', minWidth: 180 }}>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>{`Time: ${formatted}`}</div>
-          {payload.map((entry: any, index: number) => (
-            <div key={index} style={{ color: entry.color, fontWeight: 500 }}>
-              {`${entry.name}: ${entry.value}${entry.name === "Temperature" ? "°C" : entry.name === "Humidity" ? "%" : ""}`}
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+  // Theme-aware border and background classes
+  const cardClass = isDark
+    ? "bg-gray-800 border border-gray-700 rounded-lg p-4"
+    : "bg-white border border-gray-300 rounded-lg p-4"
 
   return (
-    <div className="space-y-6">
-      {/* Time Range Selector */}
-      <div className="flex gap-2 justify-center">
-        {["1h", "12h", "24h"].map((range) => (
-          <Button
-            key={range}
-            variant={timeRange === range ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTimeRange(range)}
-            className={
-              timeRange === range ? "bg-blue-600 hover:bg-blue-700" : "border-gray-600 text-gray-300 hover:bg-gray-700"
-            }
+    <div className="space-y-8">
+      <div className="flex gap-2 mb-4">
+        {TIME_RANGES.map((r) => (
+          <button
+            key={r.value}
+            className={`px-3 py-1 rounded ${timeRange === r.value ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-200"}`}
+            onClick={() => setTimeRange(r.value)}
+            disabled={loading}
           >
-            {range}
-          </Button>
+            {r.label}
+          </button>
         ))}
       </div>
-
-      {/* Temperature & Humidity Chart */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Temperature & Humidity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="h-64 flex items-center justify-center">
-              <div className="text-gray-400">Loading chart data...</div>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={formattedData.map(d => ({ ...d, ts: new Date(d.timestamp).getTime() }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis
-                  dataKey="ts"
-                  type="number"
-                  scale="time"
-                  domain={[
-                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[0].timestamp).getTime() : 'auto',
-                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[data.length-1].timestamp).getTime() : 'auto',
-                  ]}
-                  tickFormatter={value => {
-                    const date = new Date(value);
-                    return date.toLocaleDateString([], { month: "short", day: "numeric" }) +
-                      " " +
-                      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
-                  }}
-                />
-                <YAxis stroke="#9CA3AF" fontSize={12} />
-                <Tooltip
-                  labelFormatter={value => {
-                    const date = new Date(value);
-                    return date.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: true });
-                  }}
-                  content={<CustomTooltip />}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="temperature"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                  name="Temperature"
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="humidity"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  name="Humidity"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Soil Moisture Chart */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Droplets className="h-5 w-5" />
-            Soil Moisture Levels
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="h-64 flex items-center justify-center">
-              <div className="text-gray-400">Loading chart data...</div>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={formattedData.map(d => ({ ...d, ts: new Date(d.timestamp).getTime() }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis
-                  dataKey="ts"
-                  type="number"
-                  scale="time"
-                  domain={[
-                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[0].timestamp).getTime() : 'auto',
-                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[data.length-1].timestamp).getTime() : 'auto',
-                  ]}
-                  tickFormatter={value => {
-                    const date = new Date(value);
-                    return date.toLocaleDateString([], { month: "short", day: "numeric" }) +
-                      " " +
-                      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
-                  }}
-                />
-                <YAxis stroke="#9CA3AF" fontSize={12} />
-                <Tooltip
-                  labelFormatter={value => {
-                    const date = new Date(value);
-                    return date.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: true });
-                  }}
-                  content={<CustomTooltip />}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="soil_moisture1"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  name="Soil Moisture 1"
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="soil_moisture2"
-                  stroke="#34D399"
-                  strokeWidth={2}
-                  name="Soil Moisture 2"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={cardClass}>
+          <h3 className="text-lg font-semibold mb-2">Temperature & Humidity</h3>
+          <ChartContainer
+            config={chartConfig}
+            echartOption={tempHumOptions}
+            echartTheme={resolvedTheme}
+            themeMode={resolvedTheme}
+          />
+        </div>
+        <div className={cardClass}>
+          <h3 className="text-lg font-semibold mb-2">Soil Moisture</h3>
+          <ChartContainer
+            config={chartConfig}
+            echartOption={soilOptions}
+            echartTheme={resolvedTheme}
+            themeMode={resolvedTheme}
+          />
+        </div>
+      </div>
     </div>
   )
 }

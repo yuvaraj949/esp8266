@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { RotateCcw, AlertTriangle, Wifi } from "lucide-react"
-import { apiRequest } from "@/lib/api"
+import { triggerRestart, fetchRestartTrigger } from "@/lib/api"
 
 interface RestartTriggerStatus {
   ESP32?: boolean
@@ -39,8 +39,8 @@ export function RestartButton() {
   const fetchTriggerStatus = async () => {
     setIsLoadingStatus(true)
     try {
-      const response = await apiRequest("/api-restart-trigger")
-      setTriggerStatus(response)
+      const response = await fetchRestartTrigger()
+      setTriggerStatus({ ESP32: response.value === "1" })
     } catch (error) {
       console.error("Failed to fetch trigger status:", error)
     } finally {
@@ -50,30 +50,26 @@ export function RestartButton() {
 
   useEffect(() => {
     fetchTriggerStatus()
-    // Poll for trigger status every 5 seconds
-    const interval = setInterval(fetchTriggerStatus, 5000)
-    return () => clearInterval(interval)
-  }, [])
+    let interval: NodeJS.Timeout | null = null;
+    if (triggerStatus?.ESP32) {
+      // If device is restarting, poll every 5s
+      interval = setInterval(fetchTriggerStatus, 5000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerStatus?.ESP32])
 
   const handleRestart = async () => {
     setIsRestarting(true)
     setActionMessage("Sending restart command...")
 
     try {
-      const response = await apiRequest("/api-restart-trigger-post", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ device: "ESP32" }),
-      })
-
-      if (response.success) {
-        setActionMessage("Restart command sent successfully")
-        setLastRestart(new Date().toISOString())
-        // Fetch updated trigger status
-        setTimeout(fetchTriggerStatus, 1000)
-      }
+      await triggerRestart()
+      setActionMessage("Restart command sent successfully")
+      setLastRestart(new Date().toISOString())
+      fetchTriggerStatus()
     } catch (error) {
       console.error("Failed to restart device:", error)
       setActionMessage("Error: Could not restart device")

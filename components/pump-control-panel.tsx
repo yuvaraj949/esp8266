@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Droplets, Power, Wifi } from "lucide-react"
-import { apiRequest } from "@/lib/api"
+import { setPumpStatus } from "@/lib/api"
 
 interface PumpStatus {
   status?: boolean
@@ -33,23 +33,12 @@ export function PumpControlPanel({ status, onStatusChange }: PumpControlPanelPro
     setLastAction(null)
 
     try {
-      const response = await apiRequest("/api-pump-post", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ on: newState }),
-      })
-
-      if (response.success) {
-        setLastAction(`Pump ${newState ? "activated" : "deactivated"}`)
-      }
-
+      await setPumpStatus(newState)
+      setLastAction(`Pump ${newState ? "activated" : "deactivated"}`)
       if (status) {
         status.status = newState
         status.last_changed = new Date().toISOString()
       }
-
       onStatusChange()
     } catch (error) {
       console.error("Failed to toggle pump:", error)

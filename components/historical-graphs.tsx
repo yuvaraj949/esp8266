@@ -22,30 +22,46 @@ export function HistoricalGraphs() {
   const [timeRange, setTimeRange] = useState("24h")
   const [formattedData, setFormattedData] = useState<HistoricalData[]>([])
 
+  // Downsample to 5-minute intervals
+  function downsample(data: HistoricalData[], intervalMinutes = 5) {
+    if (data.length === 0) return [];
+    const result = [];
+    let lastTime = null;
+    for (const item of data) {
+      const t = new Date(item.timestamp).getTime();
+      if (
+        lastTime === null ||
+        t - lastTime >= intervalMinutes * 60 * 1000
+      ) {
+        result.push(item);
+        lastTime = t;
+      }
+    }
+    // Always include the last point
+    if (result[result.length - 1] !== data[data.length - 1]) {
+      result.push(data[data.length - 1]);
+    }
+    return result;
+  }
+
   const fetchHistoricalData = async (range: string) => {
     setLoading(true)
     try {
       let since;
-      if (range === "7d") {
-        const now = new Date();
-        const sinceDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        sinceDate.setUTCHours(0, 0, 0, 0); // Start of the day, 7 days ago
-        since = sinceDate.toISOString();
-      } else if (range === "24h") {
+      if (range === "24h") {
         since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      } else if (range === "12h") {
+        since = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
       } else {
+        // 1h
         since = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
       }
-      let limit = 12; // default for 1h
-      if (range === "24h") limit = 144;
-      if (range === "7d") limit = 168;
-
       const response = await apiRequest(`/api-data-history?since=${since}&limit=5000`)
       // Sort ascending (oldest to newest)
       const sorted = response.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      // Debug log
-      console.log("First timestamp:", sorted[0]?.timestamp, "Last timestamp:", sorted[sorted.length-1]?.timestamp);
-      setData(sorted);
+      const downsampled = downsample(sorted, 5);
+      console.log("First timestamp:", downsampled[0]?.timestamp, "Last timestamp:", downsampled[downsampled.length-1]?.timestamp);
+      setData(downsampled);
     } catch (error) {
       console.error("Failed to fetch historical data:", error)
     } finally {
@@ -63,10 +79,8 @@ export function HistoricalGraphs() {
       data.map((item: any) => {
         let label = ""
         const date = new Date(item.timestamp)
-        if (timeRange === "1h" || timeRange === "24h") {
+        if (timeRange === "1h" || timeRange === "12h" || timeRange === "24h") {
           label = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        } else if (timeRange === "7d") {
-          label = date.toLocaleDateString([], { month: "short", day: "numeric" })
         }
         return { ...item, formattedLabel: label }
       })
@@ -119,7 +133,7 @@ export function HistoricalGraphs() {
     <div className="space-y-6">
       {/* Time Range Selector */}
       <div className="flex gap-2 justify-center">
-        {["1h", "24h", "7d"].map((range) => (
+        {["1h", "12h", "24h"].map((range) => (
           <Button
             key={range}
             variant={timeRange === range ? "default" : "outline"}
@@ -155,7 +169,10 @@ export function HistoricalGraphs() {
                   dataKey="ts"
                   type="number"
                   scale="time"
-                  domain={['dataMin', 'dataMax']}
+                  domain={[
+                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[0].timestamp).getTime() : 'auto',
+                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[data.length-1].timestamp).getTime() : 'auto',
+                  ]}
                   tickFormatter={value => {
                     const date = new Date(value);
                     return date.toLocaleDateString([], { month: "short", day: "numeric" }) +
@@ -215,7 +232,10 @@ export function HistoricalGraphs() {
                   dataKey="ts"
                   type="number"
                   scale="time"
-                  domain={['dataMin', 'dataMax']}
+                  domain={[
+                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[0].timestamp).getTime() : 'auto',
+                    typeof data !== 'undefined' && data.length > 0 ? new Date(data[data.length-1].timestamp).getTime() : 'auto',
+                  ]}
                   tickFormatter={value => {
                     const date = new Date(value);
                     return date.toLocaleDateString([], { month: "short", day: "numeric" }) +

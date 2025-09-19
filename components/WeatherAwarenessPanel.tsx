@@ -5,7 +5,7 @@ import { CloudRain, Sun, Thermometer } from "lucide-react"
 
 export function WeatherAwarenessPanel() {
   // Dummy data
-  const rainDetected = true
+  const rainDetected = false
   const temperature = 32 // °C
   const humidity = 68 // %
 

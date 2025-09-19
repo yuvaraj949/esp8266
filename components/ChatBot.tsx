@@ -1,12 +1,60 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { MessageCircle, X } from "lucide-react"
 
-export function ChatBot() {
+interface ChatBotProps {
+  sensorData?: {
+    temperature?: number
+    humidity?: number
+    soil_moisture1?: number
+    soil_moisture2?: number
+  }
+  pumpStatus?: {
+    status: boolean
+    last_changed?: string
+  }
+  deviceOnline?: boolean
+}
+
+export function ChatBot({ sensorData, pumpStatus, deviceOnline }: ChatBotProps) {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<{ sender: "user" | "bot"; text: string }[]>([])
+  const [messages, setMessages] = useState<{ sender: "user" | "bot"; text: string }[]>([
+    { sender: "bot", text: "Hello! I'm your Garden Assistant 🤖. I can show you some stats." },
+  ])
   const [input, setInput] = useState("")
+
+  // Send initial stats when chat opens
+useEffect(() => {
+  if (open) {
+    setTimeout(() => {
+      const stats: string[] = []
+
+      if (sensorData) {
+        stats.push(
+          `🌡 Temp: ${sensorData.temperature ?? "N/A"}°C, 💧 Humidity: ${sensorData.humidity ?? "N/A"}%`
+        )
+        stats.push(
+          `🌱 Soil Moisture: ${sensorData.soil_moisture1 ?? "N/A"} / ${sensorData.soil_moisture2 ?? "N/A"}`
+        )
+      }
+
+      if (pumpStatus) {
+        stats.push(`🚰 Pump: ${pumpStatus.status ? "Running" : "Stopped"}`)
+      }
+
+      if (deviceOnline !== undefined) {
+        stats.push(`📡 Device: ${deviceOnline ? "Online" : "Offline"}`)
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        ...stats.map((text) => ({ sender: "bot" as const, text })),
+      ])
+    }, 500)
+  }
+}, [open, sensorData, pumpStatus, deviceOnline])
+
 
   const handleSend = () => {
     if (!input.trim()) return

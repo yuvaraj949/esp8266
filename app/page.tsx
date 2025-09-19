@@ -6,12 +6,16 @@ import { PumpControlPanel } from "@/components/pump-control-panel"
 import { HistoricalGraphs } from "@/components/historical-graphs"
 import { DeviceStatusPanel } from "@/components/device-status-panel"
 import { RestartButton } from "@/components/restart-button"
+import { WeatherAwarenessPanel } from "@/components/WeatherAwarenessPanel"
+import { LeakageDrainagePanel } from "@/components/LeakageDrainagePanel"
+import { AISavingsPanel } from "@/components/AISavingsPanel"
+import { AILogPanel } from "@/components/AILogPanel"
+
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle, Wifi } from "lucide-react"
 import {
   fetchLatestSensorData,
   fetchPumpStatus,
-  // fetchDeviceStatus, // Uncomment if you add device status to Firestore
 } from "@/lib/api"
 
 const DASHBOARD_SENSOR_POLL_INTERVAL = 30 * 1000; // 30 seconds
@@ -32,7 +36,6 @@ export default function Dashboard() {
   const [deviceStatus, setDeviceStatus] = useState<{ ESP32: { online: boolean; lastSeen: string } } | null>(null)
   const [loading, setLoading] = useState(true)
   const [connectionError, setConnectionError] = useState(false)
-  const [lastPumpPoll, setLastPumpPoll] = useState(Date.now())
 
   // Fetch all dashboard data from Firestore (sensor + device status)
   const fetchSensorAndDeviceData = async (showLoading = true) => {
@@ -40,12 +43,11 @@ export default function Dashboard() {
     try {
       const sensor = await fetchLatestSensorData()
       setSensorData(sensor)
-      // Infer device status from sensor timestamp
       if (sensor && sensor.timestamp) {
         const now = Date.now()
         const lastSeen = new Date(sensor.timestamp).toISOString()
         const diff = now - new Date(sensor.timestamp).getTime()
-        const online = diff < 2 * DASHBOARD_SENSOR_POLL_INTERVAL // 1 minute
+        const online = diff < 2 * DASHBOARD_SENSOR_POLL_INTERVAL
         setDeviceStatus({ ESP32: { online, lastSeen } })
       } else {
         setDeviceStatus(null)
@@ -59,12 +61,10 @@ export default function Dashboard() {
     }
   }
 
-  // Fetch pump status (separately, every 1 min or after user action)
   const fetchPumpStatusAndSet = async () => {
     try {
       const pump = await fetchPumpStatus()
       setPumpStatus(pump)
-      setLastPumpPoll(Date.now())
     } catch (error) {
       console.error("Failed to fetch pump status:", error)
     }
@@ -75,7 +75,6 @@ export default function Dashboard() {
     fetchPumpStatusAndSet()
   }, [])
 
-  // Poll sensor/device status every 30s
   useEffect(() => {
     const interval = setInterval(() => {
       fetchSensorAndDeviceData(false)
@@ -83,7 +82,6 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  // Poll pump status every 1 min
   useEffect(() => {
     const interval = setInterval(() => {
       fetchPumpStatusAndSet()
@@ -91,7 +89,6 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, [])
 
-  // When user toggles pump, refresh pump status after action
   const handlePumpStatusChange = () => {
     fetchPumpStatusAndSet()
   }
@@ -111,6 +108,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 p-4">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -126,6 +124,7 @@ export default function Dashboard() {
           </div>
         </header>
 
+        {/* Connection error alert */}
         {connectionError && (
           <Alert className="mb-6 bg-yellow-900 border-yellow-600">
             <AlertTriangle className="h-4 w-4" />
@@ -135,6 +134,7 @@ export default function Dashboard() {
           </Alert>
         )}
 
+        {/* Main grid layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Sensor Data Panel */}
           <div className="lg:col-span-1">
@@ -144,6 +144,21 @@ export default function Dashboard() {
           {/* Pump Control Panel */}
           <div className="lg:col-span-1">
             <PumpControlPanel status={pumpStatus} onStatusChange={handlePumpStatusChange} />
+          </div>
+
+          {/* Weather Awareness */}
+          <div className="lg:col-span-1">
+            <WeatherAwarenessPanel />
+          </div>
+
+          {/* Leakage & Drainage Analysis */}
+          <div className="lg:col-span-1">
+            <LeakageDrainagePanel />
+          </div>
+
+          {/* AI Savings Panel */}
+          <div className="lg:col-span-2">
+            <AISavingsPanel />
           </div>
 
           {/* Historical Graphs */}
@@ -159,6 +174,11 @@ export default function Dashboard() {
           {/* Restart Button */}
           <div className="lg:col-span-1">
             <RestartButton />
+          </div>
+
+          {/* AI Logs Panel */}
+          <div className="lg:col-span-2">
+            <AILogPanel />
           </div>
         </div>
       </div>

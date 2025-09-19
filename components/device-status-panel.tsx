@@ -30,7 +30,7 @@ export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
       const diffMins = diffMs / 60000
 
       // within 3 minutes → online
-      setIsOnline(diffMins <= 3)
+      setIsOnline(diffMins <= 2)
     } else {
       setIsOnline(false)
     }

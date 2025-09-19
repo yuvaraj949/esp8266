@@ -1,34 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CloudRain, Thermometer } from "lucide-react"
+import { CloudRain, Sun, Thermometer } from "lucide-react"
 
 export function WeatherAwarenessPanel() {
-  const [temperature, setTemperature] = useState(0)
-  const [humidity, setHumidity] = useState(0)
-  const [mistOn, setMistOn] = useState(false)
-
-  const rainDetected = false // Dummy data
-
-  useEffect(() => {
-    // Example: Fetch sensor data from your backend or API
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/weather") // Replace with your API endpoint
-        const data = await res.json()
-        setTemperature(data.temperature)
-        setHumidity(data.humidity)
-        setMistOn(data.temperature > 35) // Mist ON if temperature > 35°C
-      } catch (error) {
-        console.error("Error fetching weather data:", error)
-      }
-    }
-
-    fetchData()
-    const interval = setInterval(fetchData, 5000) // Fetch every 5 seconds
-    return () => clearInterval(interval)
-  }, [])
+  // Dummy data
+  const rainDetected = false
+  const temperature = 32 // °C
+  const humidity = 68 // %
+  const mistOn = temperature > 35 // Mist sprays if temperature > 35°C
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -58,9 +38,6 @@ export function WeatherAwarenessPanel() {
           </div>
           <div className={`text-lg font-semibold ${mistOn ? "text-green-400" : "text-red-400"}`}>
             {mistOn ? "Mist ON (High Temp)" : "Mist OFF (Temp Normal)"}
-          </div>
-          <div className="text-gray-400 text-sm mt-1">
-            Temp: {temperature}°C | Humidity: {humidity}%
           </div>
         </div>
       </CardContent>

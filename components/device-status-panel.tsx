@@ -19,10 +19,20 @@ interface DeviceStatusPanelProps {
 
 export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
   const [formattedLastSeen, setFormattedLastSeen] = useState<string>("")
+  const [isOnline, setIsOnline] = useState<boolean>(false)
 
   useEffect(() => {
     if (status?.ESP32?.lastSeen) {
-      setFormattedLastSeen(new Date(status.ESP32.lastSeen).toLocaleString())
+      const lastSeenDate = new Date(status.ESP32.lastSeen)
+      setFormattedLastSeen(lastSeenDate.toLocaleString())
+
+      const diffMs = Date.now() - lastSeenDate.getTime()
+      const diffMins = diffMs / 60000
+
+      // within 3 minutes → online
+      setIsOnline(diffMins <= 3)
+    } else {
+      setIsOnline(false)
     }
   }, [status?.ESP32?.lastSeen])
 
@@ -46,7 +56,7 @@ export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
     <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
-          {status?.ESP32?.online ? <Wifi className="h-5 w-5 text-green-400" /> : <WifiOff className="h-5 w-5 text-red-400" />}
+          {isOnline ? <Wifi className="h-5 w-5 text-green-400" /> : <WifiOff className="h-5 w-5 text-red-400" />}
           Device Status
         </CardTitle>
       </CardHeader>
@@ -59,21 +69,21 @@ export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
                 <div className="text-sm text-gray-400">Smart Garden Device</div>
               </div>
               <Badge
-                variant={status.ESP32?.online ? "default" : "destructive"}
-                className={status.ESP32?.online ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+                variant={isOnline ? "default" : "destructive"}
+                className={isOnline ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
               >
-                {status.ESP32?.online ? "Online" : "Offline"}
+                {isOnline ? "Online" : "Offline"}
               </Badge>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
               <div className="bg-gray-700 p-4 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-3 h-3 rounded-full ${status.ESP32?.online ? "bg-green-400" : "bg-red-400"}`} />
+                  <div className={`w-3 h-3 rounded-full ${isOnline ? "bg-green-400" : "bg-red-400"}`} />
                   <span className="text-gray-300 text-sm">Connection Status</span>
                 </div>
-                <div className={`text-lg font-semibold ${status.ESP32?.online ? "text-green-400" : "text-red-400"}`}>
-                  {status.ESP32?.online ? "Connected" : "Disconnected"}
+                <div className={`text-lg font-semibold ${isOnline ? "text-green-400" : "text-red-400"}`}>
+                  {isOnline ? "Connected" : "Disconnected"}
                 </div>
               </div>
 
@@ -83,7 +93,7 @@ export function DeviceStatusPanel({ status }: DeviceStatusPanelProps) {
                     <Clock className="h-4 w-4 text-gray-400" />
                     <span className="text-gray-300 text-sm">Last Seen</span>
                   </div>
-                  <div className="text-white font-medium">{getTimeSince(status.ESP32?.lastSeen)}</div>
+                  <div className="text-white font-medium">{getTimeSince(status.ESP32.lastSeen)}</div>
                   <div className="text-xs text-gray-400 mt-1">{formattedLastSeen}</div>
                 </div>
               )}

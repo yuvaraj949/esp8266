@@ -10,6 +10,8 @@ import { WeatherAwarenessPanel } from "@/components/WeatherAwarenessPanel"
 import { LeakageDrainagePanel } from "@/components/LeakageDrainagePanel"
 import { AISavingsPanel } from "@/components/AISavingsPanel"
 import { AILogPanel } from "@/components/AILogPanel"
+import { ChatBot } from "@/components/ChatBot"
+
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle, Wifi } from "lucide-react"

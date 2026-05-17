@@ -64,26 +64,26 @@ export function PumpControlPanel({ status, onStatusChange }: PumpControlPanelPro
           <>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Power className={`h-6 w-6 ${status.status ? "text-green-400" : "text-gray-400"}`} />
+                <Power className={`h-6 w-6 ${status.status === undefined ? "text-gray-500" : status.status ? "text-green-400" : "text-gray-400"}`} />
                 <div>
                   <div className="text-white font-medium">Water Pump</div>
-                  <div className={`text-sm ${status.status ? "text-green-400" : "text-gray-400"}`}>
-                    {status.status ? "Running" : "Stopped"}
+                  <div className={`text-sm ${status.status === undefined ? "text-gray-500" : status.status ? "text-green-400" : "text-gray-400"}`}>
+                    {status.status === undefined ? "Status Unavailable" : status.status ? "Running" : "Stopped"}
                   </div>
                 </div>
               </div>
               <Switch
                 checked={status.status || false}
                 onCheckedChange={togglePump}
-                disabled={isUpdating}
+                disabled={isUpdating || status.status === undefined}
                 className="data-[state=checked]:bg-green-600"
               />
             </div>
 
             <div className="bg-gray-700 p-4 rounded-lg">
               <div className="text-sm text-gray-300 mb-1">Status</div>
-              <div className={`text-lg font-semibold ${status.status ? "text-green-400" : "text-red-400"}`}>
-                {status.status ? "ON" : "OFF"}
+              <div className={`text-lg font-semibold ${status.status === undefined ? "text-gray-400" : status.status ? "text-green-400" : "text-red-400"}`}>
+                {status.status === undefined ? "N/A" : status.status ? "ON" : "OFF"}
               </div>
             </div>
 

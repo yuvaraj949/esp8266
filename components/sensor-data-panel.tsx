@@ -42,7 +42,7 @@ export function SensorDataPanel({ data }: SensorDataPanelProps) {
                   <Thermometer className="h-4 w-4 text-red-400" />
                   <span className="text-gray-300 text-sm">Temperature</span>
                 </div>
-                <div className="text-2xl font-bold text-white">{data.temperature?.toFixed(1) || "--"}°C</div>
+                <div className="text-2xl font-bold text-white">{data.temperature !== undefined ? `${data.temperature.toFixed(1)}°C` : "N/A"}</div>
               </div>
 
               <div className="bg-gray-700 p-4 rounded-lg">
@@ -50,7 +50,7 @@ export function SensorDataPanel({ data }: SensorDataPanelProps) {
                   <Droplets className="h-4 w-4 text-blue-400" />
                   <span className="text-gray-300 text-sm">Humidity</span>
                 </div>
-                <div className="text-2xl font-bold text-white">{data.humidity?.toFixed(1) || "--"}%</div>
+                <div className="text-2xl font-bold text-white">{data.humidity !== undefined ? `${data.humidity.toFixed(1)}%` : "N/A"}</div>
               </div>
 
               <div className="bg-gray-700 p-4 rounded-lg">
@@ -59,7 +59,7 @@ export function SensorDataPanel({ data }: SensorDataPanelProps) {
                   <span className="text-gray-300 text-sm">Soil Moisture 1</span>
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {data.soil_moisture1 || "--"}%
+                  {data.soil_moisture1 !== undefined ? `${data.soil_moisture1}%` : "N/A"}
                 </div>
               </div>
 
@@ -69,14 +69,18 @@ export function SensorDataPanel({ data }: SensorDataPanelProps) {
                   <span className="text-gray-300 text-sm">Soil Moisture 2</span>
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {data.soil_moisture2 || "--"}%
+                  {data.soil_moisture2 !== undefined ? `${data.soil_moisture2}%` : "N/A"}
                 </div>
               </div>
             </div>
 
-            {data.timestamp && (
-              <div className="text-sm text-gray-400 text-center pt-2 border-t border-gray-600">
+            {data.timestamp ? (
+              <div className="text-sm text-gray-400 text-center pt-2 border-t border-gray-600 mt-4">
                 Last updated: {formattedTimestamp}
+              </div>
+            ) : (
+              <div className="text-sm text-red-400 text-center pt-2 border-t border-gray-600 mt-4">
+                Data not available
               </div>
             )}
           </>

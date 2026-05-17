@@ -32,7 +32,7 @@ export default function Dashboard() {
     timestamp?: string;
   } | null>(null)
   const [pumpStatus, setPumpStatus] = useState<{
-    status: boolean;
+    status?: boolean;
     last_changed?: string;
   } | null>(null)
   const [deviceStatus, setDeviceStatus] = useState<{ ESP32: { online: boolean; lastSeen: string } } | null>(null)
@@ -58,6 +58,7 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error)
       setConnectionError(true)
+      setSensorData({}) // Pass empty object to render skeleton with N/A
     } finally {
       if (showLoading) setLoading(false)
     }
@@ -69,6 +70,7 @@ export default function Dashboard() {
       setPumpStatus(pump)
     } catch (error) {
       console.error("Failed to fetch pump status:", error)
+      setPumpStatus({}) // Pass empty object to render skeleton with N/A
     }
   }
 
